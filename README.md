@@ -1,36 +1,118 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ZenBlog Client
 
-## Getting Started
+Next.js App Router frontend for **ZenBlog**, paired with the ASP.NET Core API in the sibling `ZenBlogServer` folder.
 
-First, run the development server:
+## Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Next.js 16 (App Router) + React 19 + TypeScript
+- Tailwind CSS
+- TanStack Query for server state
+- In-memory JWT auth (no `localStorage`)
+
+## Project structure
+
+```
+src/
+  api/           # HTTP client, DTOs, resource helpers
+  app/           # Routes (home, login, blogs, dashboard)
+  components/    # Shared UI (auth guard, skeletons, comments)
+  context/       # AuthContext
+  providers/     # React Query + toast providers
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Getting started
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Prerequisites
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Node.js 20+
+- Running ZenBlog API at `https://localhost:7117` (see backend launch profile)
 
-## Learn More
+### Install & run
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+cd zenblog_client
+npm install
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Environment
 
-## Deploy on Vercel
+Create `.env.local` (not committed):
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```env
+NEXT_PUBLIC_API_URL=https://localhost:7117
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## Local testing checklist
+
+### 1. Verify backend CORS configuration
+
+Open `ZenBlogServer/Presentation/ZenBlog.API/Program.cs` and confirm a CORS policy allows your frontend origin (default Next.js port **3000**):
+
+```csharp
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000") // Your Next.js local URL
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+// ...
+
+// Must be placed BEFORE MapControllers / MapGroup endpoints
+app.UseCors("AllowFrontend");
+```
+
+Without this, the browser blocks API calls with a CORS error.
+
+If `npm run dev` uses another port (e.g. `3001`), add that origin to `WithOrigins(...)` and restart the API.
+
+### 2. Point the client at the API
+
+Ensure `.env.local` matches the API HTTPS URL above (`launchSettings.json` profile `https` → `https://localhost:7117`).
+
+### 3. Trust the local HTTPS certificate (Windows)
+
+```bash
+dotnet dev-certs https --trust
+```
+
+### 4. Run both apps
+
+**Terminal A — API**
+
+```bash
+cd ZenBlogServer/Presentation/ZenBlog.API
+dotnet run --launch-profile https
+```
+
+API: [https://localhost:7117](https://localhost:7117) (Scalar often at `/scalar`)
+
+**Terminal B — Client**
+
+```bash
+cd zenblog_client
+npm run dev
+```
+
+Client: [http://localhost:3000](http://localhost:3000)
+
+### 5. Smoke-test the UI
+
+1. `/` — blogs and categories load (or show a clear error).
+2. `/login` — sign in (JWT stays in memory; refresh clears the session).
+3. `/blogs/new` — create a post (auth required).
+4. `/blogs/[id]` — read a post; add comments / replies while signed in.
+
+## Auth note
+
+Access tokens are **not** stored in `localStorage` (XSS mitigation). A full page refresh logs you out; that is expected.
+
+On `401 Unauthorized` from authenticated API calls, the client clears session state and redirects to `/login`.
