@@ -98,19 +98,19 @@ function CreateBlogForm() {
   }
 
   return (
-    <main className="min-h-full flex-1 bg-zinc-50 px-4 py-10 sm:px-6 lg:px-8">
+    <main className="min-h-full flex-1 px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-2xl">
         <div className="mb-8">
           <Link
             href="/"
-            className="text-sm font-medium text-zinc-500 transition hover:text-zinc-800"
+            className="text-sm font-medium text-sage transition hover:text-forest"
           >
             ← Back to posts
           </Link>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900">
+          <h1 className="mt-3 font-serif text-3xl font-bold tracking-tight text-forest">
             Create New Blog
           </h1>
-          <p className="mt-2 text-sm text-zinc-600">
+          <p className="mt-2 text-sm text-muted">
             Fill in the details below. Your account is attached automatically
             from your session.
           </p>
@@ -118,7 +118,7 @@ function CreateBlogForm() {
 
         <form
           onSubmit={handleSubmit}
-          className="space-y-5 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8"
+          className="card-surface space-y-5 p-6 sm:p-8"
           noValidate
         >
           {formErrors.length > 0 && (
@@ -135,15 +135,16 @@ function CreateBlogForm() {
           )}
 
           <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-zinc-700">
+            <span className="mb-1.5 block text-sm font-medium text-forest">
               Title
             </span>
             <input
               type="text"
               name="title"
+              dir="auto"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-zinc-900 outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
+              className="input-field text-start"
               placeholder="A clear, compelling title"
               aria-invalid={Boolean(fieldErrors.title)}
             />
@@ -153,15 +154,16 @@ function CreateBlogForm() {
           </label>
 
           <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-zinc-700">
+            <span className="mb-1.5 block text-sm font-medium text-forest">
               Description
             </span>
             <textarea
               name="description"
+              dir="auto"
               rows={6}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full resize-y rounded-lg border border-zinc-300 px-3 py-2.5 text-zinc-900 outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
+              className="input-field resize-y text-start"
               placeholder="What is this post about?"
               aria-invalid={Boolean(fieldErrors.description)}
             />
@@ -173,18 +175,18 @@ function CreateBlogForm() {
           </label>
 
           <div className="block">
-            <span className="mb-1.5 block text-sm font-medium text-zinc-700">
+            <span className="mb-1.5 block text-sm font-medium text-forest">
               Category
             </span>
             {categoriesQuery.isLoading ? (
-              <div className="h-11 animate-pulse rounded-lg bg-zinc-100" />
+              <div className="h-11 animate-pulse rounded-lg bg-beige" />
             ) : (
               <select
                 name="categoryId"
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
                 disabled={categoriesQuery.isError}
-                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-zinc-900 outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 disabled:cursor-not-allowed disabled:bg-zinc-50"
+                className="input-field disabled:cursor-not-allowed disabled:bg-beige/40"
                 aria-invalid={Boolean(fieldErrors.categoryId)}
               >
                 <option value="">Select a category</option>
@@ -208,7 +210,7 @@ function CreateBlogForm() {
           </div>
 
           <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-zinc-700">
+            <span className="mb-1.5 block text-sm font-medium text-forest">
               Cover image URL
             </span>
             <input
@@ -216,13 +218,13 @@ function CreateBlogForm() {
               name="coverImageUrl"
               value={coverImageUrl}
               onChange={(e) => setCoverImageUrl(e.target.value)}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-zinc-900 outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
+              className="input-field"
               placeholder="https://…"
             />
           </label>
 
           <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-zinc-700">
+            <span className="mb-1.5 block text-sm font-medium text-forest">
               Blog image URL
             </span>
             <input
@@ -230,22 +232,19 @@ function CreateBlogForm() {
               name="blogImageUrl"
               value={blogImageUrl}
               onChange={(e) => setBlogImageUrl(e.target.value)}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-zinc-900 outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
+              className="input-field"
               placeholder="https://…"
             />
           </label>
 
           <div className="flex items-center justify-end gap-3 pt-2">
-            <Link
-              href="/"
-              className="rounded-lg border border-zinc-300 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
-            >
+            <Link href="/" className="btn-secondary">
               Cancel
             </Link>
             <button
               type="submit"
               disabled={mutation.isPending || categoriesQuery.isLoading}
-              className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="btn-primary"
             >
               {mutation.isPending ? "Publishing…" : "Publish blog"}
             </button>

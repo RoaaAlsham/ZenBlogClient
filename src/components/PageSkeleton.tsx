@@ -7,15 +7,15 @@ type PageSkeletonProps = {
 export function PageSkeleton({ variant = "page" }: PageSkeletonProps) {
   if (variant === "auth") {
     return (
-      <main className="flex min-h-full flex-1 items-center justify-center bg-zinc-50 px-4 py-16">
+      <main className="flex min-h-full flex-1 items-center justify-center px-4 py-16">
         <div className="w-full max-w-md animate-pulse space-y-6">
-          <div className="mx-auto h-3 w-24 rounded bg-zinc-200" />
-          <div className="mx-auto h-8 w-40 rounded bg-zinc-200" />
-          <div className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
+          <div className="mx-auto h-3 w-24 rounded bg-beige" />
+          <div className="mx-auto h-8 w-40 rounded bg-beige" />
+          <div className="card-surface p-8">
             <div className="space-y-4">
-              <div className="h-10 rounded-lg bg-zinc-100" />
-              <div className="h-10 rounded-lg bg-zinc-100" />
-              <div className="h-10 rounded-lg bg-zinc-200" />
+              <div className="h-10 rounded-lg bg-beige/70" />
+              <div className="h-10 rounded-lg bg-beige/70" />
+              <div className="h-10 rounded-lg bg-beige" />
             </div>
           </div>
         </div>
@@ -25,15 +25,15 @@ export function PageSkeleton({ variant = "page" }: PageSkeletonProps) {
 
   if (variant === "form") {
     return (
-      <main className="min-h-full flex-1 bg-zinc-50 px-4 py-10 sm:px-6 lg:px-8">
+      <main className="min-h-full flex-1 px-4 py-10 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-2xl animate-pulse space-y-6">
-          <div className="h-4 w-28 rounded bg-zinc-200" />
-          <div className="h-9 w-56 rounded bg-zinc-200" />
-          <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-            <div className="h-10 rounded-lg bg-zinc-100" />
-            <div className="h-32 rounded-lg bg-zinc-100" />
-            <div className="h-10 rounded-lg bg-zinc-100" />
-            <div className="ml-auto h-10 w-32 rounded-lg bg-zinc-200" />
+          <div className="h-4 w-28 rounded bg-beige" />
+          <div className="h-9 w-56 rounded bg-beige" />
+          <div className="card-surface space-y-4 p-8">
+            <div className="h-10 rounded-lg bg-beige/70" />
+            <div className="h-32 rounded-lg bg-beige/70" />
+            <div className="h-10 rounded-lg bg-beige/70" />
+            <div className="ml-auto h-10 w-32 rounded-lg bg-beige" />
           </div>
         </div>
       </main>
@@ -41,11 +41,11 @@ export function PageSkeleton({ variant = "page" }: PageSkeletonProps) {
   }
 
   return (
-    <div className="flex min-h-[40vh] flex-1 items-center justify-center bg-zinc-50 px-4">
+    <div className="flex min-h-[40vh] flex-1 items-center justify-center px-4">
       <div className="w-full max-w-md animate-pulse space-y-3">
-        <div className="h-4 w-1/3 rounded bg-zinc-200" />
-        <div className="h-24 rounded-2xl bg-zinc-200" />
-        <div className="h-4 w-2/3 rounded bg-zinc-100" />
+        <div className="h-4 w-1/3 rounded bg-beige" />
+        <div className="h-24 rounded-2xl bg-beige" />
+        <div className="h-4 w-2/3 rounded bg-beige/70" />
       </div>
     </div>
   );

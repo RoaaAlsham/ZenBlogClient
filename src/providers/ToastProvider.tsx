@@ -94,8 +94,8 @@ export function ToastProvider({ children }: ToastProviderProps) {
               toast.variant === "error"
                 ? "border-red-200 bg-red-50/95 text-red-800"
                 : toast.variant === "success"
-                  ? "border-emerald-200 bg-emerald-50/95 text-emerald-900"
-                  : "border-zinc-200 bg-white/95 text-zinc-800"
+                  ? "border-sage/40 bg-beige/95 text-forest"
+                  : "border-border-soft bg-surface/95 text-forest"
             }`}
           >
             <div className="flex items-start gap-3">

@@ -2,6 +2,7 @@
 
 import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { BotanicalLoginDecor } from "@/components/botanical/BotanicalDecor";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { getLoginErrorMessages, useAuth } from "@/context/AuthContext";
 import { useToast } from "@/providers/ToastProvider";
@@ -43,23 +44,25 @@ function LoginForm() {
   }
 
   return (
-    <main className="flex min-h-full flex-1 items-center justify-center bg-zinc-50 px-4 py-16">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <p className="text-sm font-medium tracking-[0.2em] text-zinc-500 uppercase">
+    <main className="relative flex min-h-full flex-1 items-center justify-center overflow-hidden px-4 py-16">
+      <BotanicalLoginDecor />
+
+      <div className="relative z-10 w-full max-w-md">
+        <div className="mb-10 text-center">
+          <p className="text-sm font-medium tracking-[0.28em] text-sage uppercase">
             ZenBlog
           </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900">
+          <h1 className="mt-3 font-serif text-4xl font-bold tracking-tight text-forest">
             Sign in
           </h1>
-          <p className="mt-2 text-sm text-zinc-600">
-            Enter your credentials to continue.
+          <p className="mt-3 text-sm leading-relaxed text-muted">
+            A quiet place for literary thoughts and reflections.
           </p>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm"
+          className="card-surface border-sage/20 p-8 shadow-md shadow-forest/5 sm:p-9"
           noValidate
         >
           {errors.length > 0 && (
@@ -76,7 +79,7 @@ function LoginForm() {
           )}
 
           <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-zinc-700">
+            <span className="mb-1.5 block text-sm font-medium text-forest">
               Email
             </span>
             <input
@@ -86,13 +89,13 @@ function LoginForm() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-zinc-900 outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
+              className="input-field"
               placeholder="you@example.com"
             />
           </label>
 
           <label className="mt-4 block">
-            <span className="mb-1.5 block text-sm font-medium text-zinc-700">
+            <span className="mb-1.5 block text-sm font-medium text-forest">
               Password
             </span>
             <input
@@ -102,7 +105,7 @@ function LoginForm() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-zinc-900 outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
+              className="input-field"
               placeholder="••••••••"
             />
           </label>
@@ -110,7 +113,7 @@ function LoginForm() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-6 w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className="btn-primary mt-7 w-full py-3"
           >
             {isSubmitting ? "Signing in…" : "Sign in"}
           </button>

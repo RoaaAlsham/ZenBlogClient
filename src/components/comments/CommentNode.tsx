@@ -61,11 +61,11 @@ export function CommentNode({ comment, blogId }: CommentNodeProps) {
 
   return (
     <li className="list-none">
-      <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3">
+      <div className="rounded-xl border border-border-soft/80 bg-surface px-4 py-3 shadow-sm shadow-forest/5">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-sm font-medium text-zinc-900">{authorName}</p>
+          <p className="text-sm font-medium text-forest">{authorName}</p>
           <time
-            className="text-xs text-zinc-400"
+            className="text-xs text-sage"
             dateTime={comment.createdAt}
           >
             {comment.createdAt
@@ -73,7 +73,10 @@ export function CommentNode({ comment, blogId }: CommentNodeProps) {
               : ""}
           </time>
         </div>
-        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-zinc-700">
+        <p
+          dir="auto"
+          className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted text-start"
+        >
           {comment.body}
         </p>
 
@@ -83,19 +86,20 @@ export function CommentNode({ comment, blogId }: CommentNodeProps) {
               <button
                 type="button"
                 onClick={() => setIsReplying(true)}
-                className="text-sm font-medium text-zinc-600 transition hover:text-zinc-900"
+                className="text-sm font-medium text-olive transition hover:text-forest"
               >
                 Reply
               </button>
             ) : (
               <form onSubmit={handleReplySubmit} className="space-y-2">
                 <textarea
+                  dir="auto"
                   value={replyBody}
                   onChange={(e) => setReplyBody(e.target.value)}
                   rows={3}
                   maxLength={1000}
                   placeholder="Write a reply…"
-                  className="w-full resize-y rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
+                  className="input-field resize-y text-sm text-start"
                   autoFocus
                 />
                 {replyError && (
@@ -107,7 +111,7 @@ export function CommentNode({ comment, blogId }: CommentNodeProps) {
                   <button
                     type="submit"
                     disabled={replyMutation.isPending}
-                    className="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-60"
+                    className="btn-primary px-3 py-1.5"
                   >
                     {replyMutation.isPending ? "Posting…" : "Post reply"}
                   </button>
@@ -118,7 +122,7 @@ export function CommentNode({ comment, blogId }: CommentNodeProps) {
                       setReplyBody("");
                       setReplyError(null);
                     }}
-                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+                    className="btn-secondary px-3 py-1.5"
                   >
                     Cancel
                   </button>
@@ -130,7 +134,7 @@ export function CommentNode({ comment, blogId }: CommentNodeProps) {
       </div>
 
       {replies.length > 0 && (
-        <ul className="mt-3 space-y-3 border-l border-zinc-200 pl-4 sm:pl-6">
+        <ul className="mt-3 space-y-3 border-l border-border-soft ps-4 sm:ps-6">
           {replies.map((reply) => (
             <CommentNode key={reply.id} comment={reply} blogId={blogId} />
           ))}

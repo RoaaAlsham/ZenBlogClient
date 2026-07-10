@@ -7,6 +7,7 @@ import { fetchBlogs, fetchBlogsByCategory } from "@/api/blogs";
 import { fetchCategories } from "@/api/categories";
 import { getApiErrorMessages } from "@/api/httpClient";
 import type { GetBlogsQueryResult } from "@/api/types";
+import { BotanicalLeafDivider, BotanicalPageDecor } from "@/components/botanical/BotanicalDecor";
 import { useAuth } from "@/context/AuthContext";
 
 function errorMessage(error: unknown): string {
@@ -19,10 +20,10 @@ function BlogCard({ blog }: { blog: GetBlogsQueryResult }) {
   return (
     <Link
       href={`/blogs/${blog.id}`}
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:border-zinc-300 hover:shadow-md"
+      className="group card-surface flex h-full flex-col overflow-hidden hover:border-sage/50 hover:shadow-md hover:shadow-forest/8"
     >
       <article className="flex h-full flex-col">
-        <div className="relative aspect-[16/10] overflow-hidden bg-zinc-100">
+        <div className="relative aspect-[16/10] overflow-hidden bg-beige/60">
           {cover ? (
             // eslint-disable-next-line @next/next/no-img-element -- cover URLs come from the API
             <img
@@ -31,7 +32,7 @@ function BlogCard({ blog }: { blog: GetBlogsQueryResult }) {
               className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
             />
           ) : (
-            <div className="flex h-full items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200 text-sm text-zinc-400">
+            <div className="flex h-full items-center justify-center bg-gradient-to-br from-beige to-sage/20 text-sm text-muted">
               No cover image
             </div>
           )}
@@ -39,14 +40,20 @@ function BlogCard({ blog }: { blog: GetBlogsQueryResult }) {
 
         <div className="flex flex-1 flex-col gap-3 p-5">
           <div className="flex items-center gap-2">
-            <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600">
+            <span className="rounded-full bg-beige px-2.5 py-1 text-xs font-medium text-olive">
               {blog.category?.categoryName ?? "Uncategorized"}
             </span>
           </div>
-          <h2 className="text-lg font-semibold tracking-tight text-zinc-900">
+          <h2
+            dir="auto"
+            className="font-serif text-xl font-bold leading-snug tracking-tight text-forest text-start"
+          >
             {blog.title}
           </h2>
-          <p className="line-clamp-3 flex-1 text-sm leading-6 text-zinc-600">
+          <p
+            dir="auto"
+            className="line-clamp-3 flex-1 text-sm leading-6 text-muted text-start"
+          >
             {blog.description}
           </p>
         </div>
@@ -57,15 +64,15 @@ function BlogCard({ blog }: { blog: GetBlogsQueryResult }) {
 
 function BlogCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-      <div className="aspect-[16/10] animate-pulse bg-zinc-200" />
+    <div className="card-surface overflow-hidden">
+      <div className="aspect-[16/10] animate-pulse bg-beige" />
       <div className="space-y-3 p-5">
-        <div className="h-5 w-24 animate-pulse rounded-full bg-zinc-200" />
-        <div className="h-6 w-48 animate-pulse rounded bg-zinc-200 sm:w-56" />
+        <div className="h-5 w-24 animate-pulse rounded-full bg-beige" />
+        <div className="h-6 w-48 animate-pulse rounded bg-beige sm:w-56" />
         <div className="space-y-2">
-          <div className="h-4 w-full animate-pulse rounded bg-zinc-100" />
-          <div className="h-4 w-11/12 animate-pulse rounded bg-zinc-100" />
-          <div className="h-4 w-2/3 animate-pulse rounded bg-zinc-100" />
+          <div className="h-4 w-full animate-pulse rounded bg-beige/70" />
+          <div className="h-4 w-11/12 animate-pulse rounded bg-beige/70" />
+          <div className="h-4 w-2/3 animate-pulse rounded bg-beige/70" />
         </div>
       </div>
     </div>
@@ -78,7 +85,7 @@ function CategorySidebarSkeleton() {
       {Array.from({ length: 5 }).map((_, index) => (
         <div
           key={index}
-          className="h-10 animate-pulse rounded-lg bg-zinc-200"
+          className="h-10 animate-pulse rounded-lg bg-beige"
         />
       ))}
     </div>
@@ -118,14 +125,16 @@ export default function HomePage() {
     : null;
 
   return (
-    <div className="min-h-full flex-1 bg-zinc-50">
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+    <div className="relative min-h-full flex-1 overflow-hidden">
+      <BotanicalPageDecor />
+
+      <header className="relative border-b border-border-soft/80 bg-surface/80 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8">
           <div>
-            <p className="text-xs font-medium tracking-[0.2em] text-zinc-500 uppercase">
+            <p className="text-xs font-medium tracking-[0.22em] text-sage uppercase">
               ZenBlog
             </p>
-            <h1 className="text-xl font-semibold tracking-tight text-zinc-900">
+            <h1 className="font-serif text-2xl font-bold tracking-tight text-forest">
               Discover stories
             </h1>
           </div>
@@ -133,28 +142,22 @@ export default function HomePage() {
           <div className="flex items-center gap-2 sm:gap-3">
             {isAuthenticated ? (
               <>
-                <span className="hidden text-sm text-zinc-500 sm:inline">
+                <span className="hidden text-sm text-muted sm:inline">
                   {user?.email}
                 </span>
-                <Link
-                  href="/blogs/new"
-                  className="rounded-lg bg-zinc-900 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-zinc-800"
-                >
+                <Link href="/blogs/new" className="btn-primary px-3.5 py-2">
                   Create New Blog
                 </Link>
                 <button
                   type="button"
                   onClick={logout}
-                  className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+                  className="btn-secondary px-3 py-2"
                 >
                   Log out
                 </button>
               </>
             ) : (
-              <Link
-                href="/login"
-                className="rounded-lg border border-zinc-300 px-3.5 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
-              >
+              <Link href="/login" className="btn-secondary px-3.5 py-2">
                 Sign in
               </Link>
             )}
@@ -162,9 +165,9 @@ export default function HomePage() {
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[240px_1fr] lg:px-8">
+      <div className="relative mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[240px_1fr] lg:px-8">
         <aside className="lg:sticky lg:top-8 lg:self-start">
-          <h2 className="mb-3 text-sm font-semibold tracking-wide text-zinc-900 uppercase">
+          <h2 className="mb-3 text-sm font-semibold tracking-wide text-forest uppercase">
             Categories
           </h2>
 
@@ -184,8 +187,8 @@ export default function HomePage() {
                 onClick={() => setSelectedCategoryId(null)}
                 className={`shrink-0 rounded-lg px-3 py-2 text-left text-sm font-medium transition ${
                   selectedCategoryId === null
-                    ? "bg-zinc-900 text-white"
-                    : "bg-white text-zinc-700 ring-1 ring-zinc-200 hover:bg-zinc-100"
+                    ? "bg-forest text-paper"
+                    : "bg-surface text-muted ring-1 ring-border-soft hover:bg-beige/70"
                 }`}
               >
                 All
@@ -197,8 +200,8 @@ export default function HomePage() {
                   onClick={() => setSelectedCategoryId(category.id)}
                   className={`shrink-0 rounded-lg px-3 py-2 text-left text-sm font-medium transition ${
                     selectedCategoryId === category.id
-                      ? "bg-zinc-900 text-white"
-                      : "bg-white text-zinc-700 ring-1 ring-zinc-200 hover:bg-zinc-100"
+                      ? "bg-forest text-paper"
+                      : "bg-surface text-muted ring-1 ring-border-soft hover:bg-beige/70"
                   }`}
                 >
                   {category.categoryName}
@@ -211,10 +214,10 @@ export default function HomePage() {
         <section>
           <div className="mb-6 flex items-end justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-semibold tracking-tight text-zinc-900">
+              <h2 className="font-serif text-2xl font-bold tracking-tight text-forest">
                 {selectedCategoryName}
               </h2>
-              <p className="mt-1 text-sm text-zinc-600">
+              <p className="mt-1 text-sm text-muted">
                 {blogsQuery.isLoading
                   ? "Loading posts…"
                   : `${blogsQuery.data?.length ?? 0} post${(blogsQuery.data?.length ?? 0) === 1 ? "" : "s"}`}
@@ -222,38 +225,42 @@ export default function HomePage() {
             </div>
           </div>
 
+          <BotanicalLeafDivider className="mb-8" />
+
           {blogsError ? (
             <div
               role="alert"
-              className="rounded-2xl border border-red-200 bg-red-50 px-5 py-6 text-sm text-red-700"
+              className="card-surface px-5 py-6 text-sm text-red-700"
             >
               <p className="font-medium">Couldn’t load blogs</p>
               <p className="mt-1">{blogsError}</p>
               <button
                 type="button"
                 onClick={() => blogsQuery.refetch()}
-                className="mt-4 rounded-lg bg-red-700 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-800"
+                className="btn-primary mt-4"
               >
                 Try again
               </button>
             </div>
           ) : blogsQuery.isLoading ? (
-            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-7 sm:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: 6 }).map((_, index) => (
                 <BlogCardSkeleton key={index} />
               ))}
             </div>
           ) : (blogsQuery.data?.length ?? 0) === 0 ? (
-            <div className="rounded-2xl border border-dashed border-zinc-300 bg-white px-6 py-16 text-center">
-              <p className="text-base font-medium text-zinc-900">No posts yet</p>
-              <p className="mt-1 text-sm text-zinc-600">
+            <div className="rounded-2xl border border-dashed border-border-soft bg-surface px-6 py-16 text-center">
+              <p className="font-serif text-lg font-bold text-forest">
+                No posts yet
+              </p>
+              <p className="mt-1 text-sm text-muted">
                 {selectedCategoryId
                   ? "Try another category or view all posts."
                   : "Check back soon for new stories."}
               </p>
             </div>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-7 sm:grid-cols-2 xl:grid-cols-3">
               {(blogsQuery.data ?? []).map((blog) => (
                 <BlogCard key={blog.id} blog={blog} />
               ))}
