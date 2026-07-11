@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { FormEvent, use, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchBlogById } from "@/api/blogs";
+import { useRouter } from "next/navigation";
+import { deleteBlog, fetchBlogById } from "@/api/blogs";
 import { createComment, fetchCommentsByBlogId } from "@/api/comments";
 import { getApiErrorMessages } from "@/api/httpClient";
+import { ConfirmModal } from "@/components/ConfirmModal";
 import { CommentNode } from "@/components/comments/CommentNode";
+import { MarkdownContent } from "@/components/MarkdownContent";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/providers/ToastProvider";
 
@@ -111,7 +114,11 @@ function TopLevelCommentForm({ blogId }: { blogId: string }) {
 
 export default function BlogDetailPage({ params }: BlogDetailPageProps) {
   const { id } = use(params);
-  const { isAuthenticated } = useAuth();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { isAuthenticated, user } = useAuth();
+  const { toastError, toastSuccess } = useToast();
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const blogQuery = useQuery({
     queryKey: ["blog", id],
@@ -123,8 +130,24 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
     queryFn: () => fetchCommentsByBlogId(id),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteBlog(id),
+    onSuccess: async () => {
+      setDeleteOpen(false);
+      await queryClient.invalidateQueries({ queryKey: ["blogs"] });
+      await queryClient.removeQueries({ queryKey: ["blog", id] });
+      toastSuccess("The post has been removed.", "Blog deleted");
+      router.push("/");
+    },
+    onError: (error: unknown) => {
+      toastError(error, "Couldn’t delete blog");
+    },
+  });
+
   const cover =
     blogQuery.data?.coverImageUrl || blogQuery.data?.blogImageUrl || null;
+  const isAuthor =
+    Boolean(user?.id) && blogQuery.data?.userId === user?.id;
 
   return (
     <main className="min-h-full flex-1 bg-zinc-50">
@@ -173,13 +196,33 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
                 </span>
               </div>
 
-              <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
-                {blogQuery.data.title}
-              </h1>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+                  {blogQuery.data.title}
+                </h1>
 
-              <p className="mt-6 whitespace-pre-wrap text-base leading-8 text-zinc-700">
-                {blogQuery.data.description}
-              </p>
+                {isAuthor && (
+                  <div className="flex shrink-0 flex-wrap gap-2">
+                    <Link
+                      href={`/blogs/${id}/edit`}
+                      className="rounded-lg bg-zinc-900 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-zinc-800"
+                    >
+                      Edit Blog
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteOpen(true)}
+                      className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100"
+                    >
+                      Delete Blog
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-6">
+                <MarkdownContent content={blogQuery.data.description} />
+              </div>
             </article>
           ) : null}
         </div>
@@ -245,6 +288,28 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
           </div>
         </section>
       </div>
+
+      <ConfirmModal
+        open={deleteOpen}
+        title="Delete this blog?"
+        description={
+          <>
+            This permanently removes{" "}
+            <span className="font-medium text-zinc-800">
+              {blogQuery.data?.title ?? "this post"}
+            </span>
+            . This action cannot be undone.
+          </>
+        }
+        confirmLabel="Delete Blog"
+        cancelLabel="Keep post"
+        danger
+        confirming={deleteMutation.isPending}
+        onCancel={() => {
+          if (!deleteMutation.isPending) setDeleteOpen(false);
+        }}
+        onConfirm={() => deleteMutation.mutate()}
+      />
     </main>
   );
 }
