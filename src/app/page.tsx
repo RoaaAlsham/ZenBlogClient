@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchBlogs, fetchBlogsByCategory } from "@/api/blogs";
 import { fetchCategories } from "@/api/categories";
 import { getApiErrorMessages } from "@/api/httpClient";
 import type { GetBlogsQueryResult } from "@/api/types";
 import { useAuth } from "@/context/AuthContext";
+
+const PAGE_SIZE = 10;
 
 function errorMessage(error: unknown): string {
   return getApiErrorMessages(error).join("; ");
@@ -85,11 +87,53 @@ function CategorySidebarSkeleton() {
   );
 }
 
+function PaginationControls({
+  page,
+  totalPages,
+  onPageChange,
+}: {
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) {
+  if (totalPages <= 1) return null;
+
+  return (
+    <nav
+      className="mt-8 flex flex-wrap items-center justify-center gap-2"
+      aria-label="Blog pagination"
+    >
+      <button
+        type="button"
+        disabled={page <= 1}
+        onClick={() => onPageChange(page - 1)}
+        className="rounded-lg border border-zinc-300 bg-white px-3.5 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Previous
+      </button>
+      <span className="px-2 text-sm text-zinc-600">
+        Page {page} of {totalPages}
+      </span>
+      <button
+        type="button"
+        disabled={page >= totalPages}
+        onClick={() => onPageChange(page + 1)}
+        className="rounded-lg border border-zinc-300 bg-white px-3.5 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Next
+      </button>
+    </nav>
+  );
+}
+
 export default function HomePage() {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, isAdmin, user, logout } = useAuth();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null,
   );
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const deferredSearch = useDeferredValue(searchQuery.trim().toLowerCase());
 
   const categoriesQuery = useQuery({
     queryKey: ["categories"],
@@ -112,10 +156,42 @@ export default function HomePage() {
     );
   }, [categoriesQuery.data, selectedCategoryId]);
 
+  const filteredBlogs = useMemo(() => {
+    const blogs = blogsQuery.data ?? [];
+    if (!deferredSearch) return blogs;
+
+    return blogs.filter((blog) => {
+      const title = blog.title.toLowerCase();
+      const description = blog.description.toLowerCase();
+      return title.includes(deferredSearch) || description.includes(deferredSearch);
+    });
+  }, [blogsQuery.data, deferredSearch]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredBlogs.length / PAGE_SIZE));
+
+  useEffect(() => {
+    setPage(1);
+  }, [selectedCategoryId, deferredSearch]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const pagedBlogs = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return filteredBlogs.slice(start, start + PAGE_SIZE);
+  }, [filteredBlogs, page]);
+
   const blogsError = blogsQuery.isError ? errorMessage(blogsQuery.error) : null;
   const categoriesError = categoriesQuery.isError
     ? errorMessage(categoriesQuery.error)
     : null;
+
+  const resultCountLabel = blogsQuery.isLoading
+    ? "Loading posts…"
+    : deferredSearch
+      ? `${filteredBlogs.length} match${filteredBlogs.length === 1 ? "" : "es"}`
+      : `${filteredBlogs.length} post${filteredBlogs.length === 1 ? "" : "s"}`;
 
   return (
     <div className="min-h-full flex-1 bg-zinc-50">
@@ -136,6 +212,20 @@ export default function HomePage() {
                 <span className="hidden text-sm text-zinc-500 sm:inline">
                   {user?.email}
                 </span>
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="rounded-lg border border-zinc-300 px-3.5 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+                  >
+                    Admin
+                  </Link>
+                )}
+                <Link
+                  href="/profile"
+                  className="rounded-lg border border-zinc-300 px-3.5 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+                >
+                  Profile
+                </Link>
                 <Link
                   href="/blogs/new"
                   className="rounded-lg bg-zinc-900 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-zinc-800"
@@ -209,17 +299,24 @@ export default function HomePage() {
         </aside>
 
         <section>
-          <div className="mb-6 flex items-end justify-between gap-4">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-2xl font-semibold tracking-tight text-zinc-900">
                 {selectedCategoryName}
               </h2>
-              <p className="mt-1 text-sm text-zinc-600">
-                {blogsQuery.isLoading
-                  ? "Loading posts…"
-                  : `${blogsQuery.data?.length ?? 0} post${(blogsQuery.data?.length ?? 0) === 1 ? "" : "s"}`}
-              </p>
+              <p className="mt-1 text-sm text-zinc-600">{resultCountLabel}</p>
             </div>
+
+            <label className="block w-full sm:max-w-xs">
+              <span className="sr-only">Search posts</span>
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search titles and descriptions…"
+                className="w-full rounded-lg border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
+              />
+            </label>
           </div>
 
           {blogsError ? (
@@ -243,21 +340,34 @@ export default function HomePage() {
                 <BlogCardSkeleton key={index} />
               ))}
             </div>
-          ) : (blogsQuery.data?.length ?? 0) === 0 ? (
+          ) : filteredBlogs.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-zinc-300 bg-white px-6 py-16 text-center">
-              <p className="text-base font-medium text-zinc-900">No posts yet</p>
+              <p className="text-base font-medium text-zinc-900">
+                {deferredSearch ? "No matching posts" : "No posts yet"}
+              </p>
               <p className="mt-1 text-sm text-zinc-600">
-                {selectedCategoryId
-                  ? "Try another category or view all posts."
-                  : "Check back soon for new stories."}
+                {deferredSearch
+                  ? "Try a different search term or clear the filter."
+                  : selectedCategoryId
+                    ? "Try another category or view all posts."
+                    : "Check back soon for new stories."}
               </p>
             </div>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-              {(blogsQuery.data ?? []).map((blog) => (
-                <BlogCard key={blog.id} blog={blog} />
-              ))}
-            </div>
+            <>
+              <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                {pagedBlogs.map((blog) => (
+                  <BlogCard key={blog.id} blog={blog} />
+                ))}
+              </div>
+              {filteredBlogs.length > PAGE_SIZE && (
+                <PaginationControls
+                  page={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                />
+              )}
+            </>
           )}
         </section>
       </div>
