@@ -51,7 +51,6 @@ function EditBlogForm() {
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
-  const [blogImageUrl, setBlogImageUrl] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formErrors, setFormErrors] = useState<string[]>([]);
   const [hydrated, setHydrated] = useState(false);
@@ -83,7 +82,6 @@ function EditBlogForm() {
     setDescription(blogQuery.data.description);
     setCategoryId(blogQuery.data.categoryId);
     setCoverImageUrl(blogQuery.data.coverImageUrl ?? "");
-    setBlogImageUrl(blogQuery.data.blogImageUrl ?? "");
     setHydrated(true);
   }, [blogQuery.data, hydrated, id, router, toastError, user]);
 
@@ -127,7 +125,6 @@ function EditBlogForm() {
       description: description.trim(),
       categoryId,
       coverImageUrl: coverImageUrl.trim() || null,
-      blogImageUrl: blogImageUrl.trim() || null,
     });
   }
 
@@ -265,20 +262,6 @@ function EditBlogForm() {
               name="coverImageUrl"
               value={coverImageUrl}
               onChange={(e) => setCoverImageUrl(e.target.value)}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-zinc-900 outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
-              placeholder="https://…"
-            />
-          </label>
-
-          <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-zinc-700">
-              Blog image URL
-            </span>
-            <input
-              type="url"
-              name="blogImageUrl"
-              value={blogImageUrl}
-              onChange={(e) => setBlogImageUrl(e.target.value)}
               className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-zinc-900 outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
               placeholder="https://…"
             />
