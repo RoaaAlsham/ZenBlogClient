@@ -8,6 +8,7 @@ import { getApiErrorMessages } from "@/api/httpClient";
 import type { GetBlogsQueryResult } from "@/api/types";
 import { fetchPublicUserByUsername } from "@/api/users";
 import { PageSkeleton } from "@/components/PageSkeleton";
+import { stripMarkdown } from "@/lib/stripMarkdown";
 
 function AuthorPostCard({ blog }: { blog: GetBlogsQueryResult }) {
   const cover = blog.coverImageUrl;
@@ -39,7 +40,7 @@ function AuthorPostCard({ blog }: { blog: GetBlogsQueryResult }) {
             </Link>
           </h3>
           <p className="mt-1 line-clamp-2 text-sm leading-6 text-zinc-600">
-            {blog.description}
+            {stripMarkdown(blog.description)}
           </p>
         </div>
 

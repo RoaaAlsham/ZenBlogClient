@@ -23,6 +23,7 @@ import {
   type ProfileFieldErrors,
   type ProfileFormValues,
 } from "@/lib/profileValidation";
+import { stripMarkdown } from "@/lib/stripMarkdown";
 import { useToast } from "@/providers/ToastProvider";
 
 function fieldClassName(invalid: boolean) {
@@ -72,7 +73,7 @@ function ProfilePostCard({
             </Link>
           </h3>
           <p className="mt-1 line-clamp-2 text-sm leading-6 text-zinc-600">
-            {blog.description}
+            {stripMarkdown(blog.description)}
           </p>
         </div>
 

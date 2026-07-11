@@ -8,6 +8,7 @@ import { fetchCategories } from "@/api/categories";
 import { getApiErrorMessages } from "@/api/httpClient";
 import type { GetBlogsQueryResult } from "@/api/types";
 import { useAuth } from "@/context/AuthContext";
+import { stripMarkdown } from "@/lib/stripMarkdown";
 
 const PAGE_SIZE = 10;
 
@@ -59,7 +60,7 @@ function BlogCard({ blog }: { blog: GetBlogsQueryResult }) {
           </Link>
         </h2>
         <p className="line-clamp-3 flex-1 text-sm leading-6 text-zinc-600">
-          {blog.description}
+          {stripMarkdown(blog.description)}
         </p>
       </div>
     </article>
