@@ -1,13 +1,14 @@
 "use client";
 
 import { FormEvent, Suspense, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { getLoginErrorMessages, useAuth } from "@/context/AuthContext";
 import { useToast } from "@/providers/ToastProvider";
 
 function LoginForm() {
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, isReady } = useAuth();
   const { toastError } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -20,10 +21,10 @@ function LoginForm() {
   const nextPath = searchParams.get("next") || "/";
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isReady && isAuthenticated) {
       router.replace(nextPath);
     }
-  }, [isAuthenticated, nextPath, router]);
+  }, [isAuthenticated, isReady, nextPath, router]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -114,6 +115,16 @@ function LoginForm() {
           >
             {isSubmitting ? "Signing in…" : "Sign in"}
           </button>
+
+          <p className="mt-6 text-center text-sm text-zinc-600">
+            Don&apos;t have an account?{" "}
+            <Link
+              href="/register"
+              className="font-medium text-zinc-900 underline-offset-4 hover:underline"
+            >
+              Sign up
+            </Link>
+          </p>
         </form>
       </div>
     </main>
