@@ -10,25 +10,26 @@ type RequireAuthProps = {
 };
 
 /**
- * Client-side route guard. In-memory JWT cannot be read by Next.js middleware,
- * so protected layouts wrap content with this component instead.
+ * Client-side route guard. Access tokens live in memory (cookies only hold the
+ * refresh token), so Next.js middleware cannot see the session — protected
+ * layouts wrap content with this component instead.
  */
 export function RequireAuth({ children }: RequireAuthProps) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isReady } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      const next = pathname && pathname !== "/" ? pathname : undefined;
-      const href = next
-        ? `/login?next=${encodeURIComponent(next)}`
-        : "/login";
-      router.replace(href);
-    }
-  }, [isAuthenticated, pathname, router]);
+    if (!isReady || isAuthenticated) return;
 
-  if (!isAuthenticated) {
+    const next = pathname && pathname !== "/" ? pathname : undefined;
+    const href = next
+      ? `/login?next=${encodeURIComponent(next)}`
+      : "/login";
+    router.replace(href);
+  }, [isAuthenticated, isReady, pathname, router]);
+
+  if (!isReady || !isAuthenticated) {
     return <PageSkeleton variant="form" />;
   }
 

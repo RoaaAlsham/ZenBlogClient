@@ -41,6 +41,9 @@ export interface LoginCommand {
 export interface LoginResult {
   userId: string;
   email: string;
+  firstName: string;
+  lastName: string;
+  imageUrl?: string | null;
   token: string;
   expiresAtUtc: string;
   refreshToken: string;
