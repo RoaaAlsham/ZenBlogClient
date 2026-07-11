@@ -16,11 +16,12 @@ import {
   setAccessToken,
   setUnauthorizedHandler,
 } from "@/api/httpClient";
-import type { LoginResult, RefreshTokenResult } from "@/api/types";
+import type { LoginResult, RefreshTokenResult, UserProfileResult } from "@/api/types";
 import { fetchUsers } from "@/api/users";
 import {
   clearAuthSessionCookies,
   persistAuthSession,
+  persistAuthUser,
   readPersistedRefreshToken,
   readPersistedUser,
 } from "@/lib/authCookies";
@@ -29,6 +30,7 @@ import { jwtHasRole, parseJwtRoles } from "@/lib/jwt";
 export type AuthUser = {
   id: string;
   email: string;
+  username: string;
   firstName: string;
   lastName: string;
   imageUrl?: string | null;
@@ -44,6 +46,8 @@ type AuthContextValue = {
   isReady: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  /** Merge profile fields into the session user (and cookie). */
+  updateUser: (next: Partial<AuthUser> | UserProfileResult) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -56,6 +60,7 @@ function normalizeAuthUser(nextUser: AuthUser): AuthUser {
   return {
     id: nextUser.id,
     email: nextUser.email,
+    username: typeof nextUser.username === "string" ? nextUser.username : "",
     firstName: typeof nextUser.firstName === "string" ? nextUser.firstName : "",
     lastName: typeof nextUser.lastName === "string" ? nextUser.lastName : "",
     imageUrl: nextUser.imageUrl,
@@ -68,7 +73,11 @@ function normalizeAuthUser(nextUser: AuthUser): AuthUser {
  */
 async function enrichAuthUser(baseUser: AuthUser): Promise<AuthUser> {
   const normalized = normalizeAuthUser(baseUser);
-  if (normalized.firstName.trim() && normalized.lastName.trim()) {
+  const needsNames =
+    !normalized.firstName.trim() || !normalized.lastName.trim();
+  const needsUsername = !normalized.username.trim();
+
+  if (!needsNames && !needsUsername) {
     return normalized;
   }
 
@@ -80,6 +89,7 @@ async function enrichAuthUser(baseUser: AuthUser): Promise<AuthUser> {
     const parts = (match.fullName ?? "").trim().split(/\s+/).filter(Boolean);
     return {
       ...normalized,
+      username: normalized.username.trim() || match.username || "",
       firstName: normalized.firstName.trim() || parts[0] || "",
       lastName: normalized.lastName.trim() || parts.slice(1).join(" ") || "",
       imageUrl: normalized.imageUrl ?? match.imageUrl,
@@ -122,6 +132,38 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = useCallback(() => {
     clearSession();
   }, [clearSession]);
+
+  const updateUser = useCallback(
+    (next: Partial<AuthUser> | UserProfileResult) => {
+      setUser((prev) => {
+        if (!prev) return prev;
+        const merged = normalizeAuthUser({
+          id: "id" in next && typeof next.id === "string" ? next.id : prev.id,
+          email:
+            "email" in next && typeof next.email === "string"
+              ? next.email
+              : prev.email,
+          username:
+            "username" in next && typeof next.username === "string"
+              ? next.username
+              : prev.username,
+          firstName:
+            "firstName" in next && typeof next.firstName === "string"
+              ? next.firstName
+              : prev.firstName,
+          lastName:
+            "lastName" in next && typeof next.lastName === "string"
+              ? next.lastName
+              : prev.lastName,
+          imageUrl:
+            "imageUrl" in next ? next.imageUrl : prev.imageUrl,
+        });
+        persistAuthUser(merged);
+        return merged;
+      });
+    },
+    [],
+  );
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
@@ -200,6 +242,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const enrichedUser = await enrichAuthUser({
         id: result.userId,
         email: result.email,
+        username: result.username ?? "",
         firstName: result.firstName,
         lastName: result.lastName,
         imageUrl: result.imageUrl,
@@ -226,8 +269,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isReady,
       login,
       logout,
+      updateUser,
     };
-  }, [user, token, isReady, login, logout]);
+  }, [user, token, isReady, login, logout, updateUser]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

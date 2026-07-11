@@ -144,8 +144,7 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
     },
   });
 
-  const cover =
-    blogQuery.data?.coverImageUrl || blogQuery.data?.blogImageUrl || null;
+  const cover = blogQuery.data?.coverImageUrl || null;
   const isAuthor =
     Boolean(user?.id) && blogQuery.data?.userId === user?.id;
 
@@ -190,10 +189,18 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
                 </div>
               )}
 
-              <div className="mb-4">
+              <div className="mb-4 flex flex-wrap items-center gap-3">
                 <span className="rounded-full bg-zinc-200/80 px-2.5 py-1 text-xs font-medium text-zinc-700">
                   {blogQuery.data.category?.categoryName ?? "Uncategorized"}
                 </span>
+                {blogQuery.data.user?.username ? (
+                  <Link
+                    href={`/authors/${encodeURIComponent(blogQuery.data.user.username)}`}
+                    className="text-sm font-medium text-zinc-600 transition hover:text-zinc-900 hover:underline"
+                  >
+                    By @{blogQuery.data.user.username}
+                  </Link>
+                ) : null}
               </div>
 
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

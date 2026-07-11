@@ -16,44 +16,53 @@ function errorMessage(error: unknown): string {
 }
 
 function BlogCard({ blog }: { blog: GetBlogsQueryResult }) {
-  const cover = blog.coverImageUrl || blog.blogImageUrl;
+  const cover = blog.coverImageUrl;
+  const authorUsername = blog.user?.username;
 
   return (
-    <Link
-      href={`/blogs/${blog.id}`}
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:border-zinc-300 hover:shadow-md"
-    >
-      <article className="flex h-full flex-col">
-        <div className="relative aspect-[16/10] overflow-hidden bg-zinc-100">
-          {cover ? (
-            // eslint-disable-next-line @next/next/no-img-element -- cover URLs come from the API
-            <img
-              src={cover}
-              alt=""
-              className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200 text-sm text-zinc-400">
-              No cover image
-            </div>
-          )}
-        </div>
-
-        <div className="flex flex-1 flex-col gap-3 p-5">
-          <div className="flex items-center gap-2">
-            <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600">
-              {blog.category?.categoryName ?? "Uncategorized"}
-            </span>
+    <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:border-zinc-300 hover:shadow-md">
+      <Link
+        href={`/blogs/${blog.id}`}
+        className="relative aspect-[16/10] overflow-hidden bg-zinc-100"
+      >
+        {cover ? (
+          // eslint-disable-next-line @next/next/no-img-element -- cover URLs come from the API
+          <img
+            src={cover}
+            alt=""
+            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200 text-sm text-zinc-400">
+            No cover image
           </div>
-          <h2 className="text-lg font-semibold tracking-tight text-zinc-900">
-            {blog.title}
-          </h2>
-          <p className="line-clamp-3 flex-1 text-sm leading-6 text-zinc-600">
-            {blog.description}
-          </p>
+        )}
+      </Link>
+
+      <div className="flex flex-1 flex-col gap-3 p-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600">
+            {blog.category?.categoryName ?? "Uncategorized"}
+          </span>
+          {authorUsername ? (
+            <Link
+              href={`/authors/${encodeURIComponent(authorUsername)}`}
+              className="text-xs font-medium text-zinc-500 transition hover:text-zinc-800 hover:underline"
+            >
+              By @{authorUsername}
+            </Link>
+          ) : null}
         </div>
-      </article>
-    </Link>
+        <h2 className="text-lg font-semibold tracking-tight text-zinc-900">
+          <Link href={`/blogs/${blog.id}`} className="hover:underline">
+            {blog.title}
+          </Link>
+        </h2>
+        <p className="line-clamp-3 flex-1 text-sm leading-6 text-zinc-600">
+          {blog.description}
+        </p>
+      </div>
+    </article>
   );
 }
 

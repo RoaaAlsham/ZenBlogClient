@@ -1,16 +1,38 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { deleteBlog, fetchBlogs } from "@/api/blogs";
+import { deleteBlog, fetchBlogsByUserId } from "@/api/blogs";
 import { getApiErrorMessages } from "@/api/httpClient";
 import type { GetBlogsQueryResult } from "@/api/types";
+import {
+  changePassword,
+  fetchCurrentUser,
+  updateProfile,
+} from "@/api/users";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useAuth } from "@/context/AuthContext";
+import {
+  validateChangePasswordForm,
+  validateProfileForm,
+  type ChangePasswordFieldErrors,
+  type ChangePasswordFormValues,
+  type ProfileFieldErrors,
+  type ProfileFormValues,
+} from "@/lib/profileValidation";
 import { useToast } from "@/providers/ToastProvider";
+
+function fieldClassName(invalid: boolean) {
+  return [
+    "mt-1.5 w-full rounded-lg border bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition",
+    invalid
+      ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+      : "border-zinc-300 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-100",
+  ].join(" ");
+}
 
 function ProfilePostCard({
   blog,
@@ -21,7 +43,7 @@ function ProfilePostCard({
   onDelete: (blog: GetBlogsQueryResult) => void;
   isDeleting: boolean;
 }) {
-  const cover = blog.coverImageUrl || blog.blogImageUrl;
+  const cover = blog.coverImageUrl;
 
   return (
     <article className="flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm sm:flex-row">
@@ -76,21 +98,78 @@ function ProfilePostCard({
 }
 
 function ProfileContent() {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const queryClient = useQueryClient();
   const { toastError, toastSuccess } = useToast();
   const [pendingDelete, setPendingDelete] =
     useState<GetBlogsQueryResult | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [profileValues, setProfileValues] = useState<ProfileFormValues>({
+    firstName: "",
+    lastName: "",
+    imageUrl: "",
+  });
+  const [profileErrors, setProfileErrors] = useState<ProfileFieldErrors>({});
+  const [passwordValues, setPasswordValues] = useState<ChangePasswordFormValues>(
+    {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  );
+  const [passwordErrors, setPasswordErrors] =
+    useState<ChangePasswordFieldErrors>({});
 
-  const blogsQuery = useQuery({
-    queryKey: ["blogs", "all"],
-    queryFn: fetchBlogs,
+  const profileQuery = useQuery({
+    queryKey: ["users", "me"],
+    queryFn: fetchCurrentUser,
+    enabled: Boolean(user),
   });
 
-  const myBlogs = useMemo(() => {
-    if (!user || !blogsQuery.data) return [];
-    return blogsQuery.data.filter((blog) => blog.userId === user.id);
-  }, [blogsQuery.data, user]);
+  const blogsQuery = useQuery({
+    queryKey: ["blogs", "user", user?.id],
+    queryFn: () => fetchBlogsByUserId(user!.id),
+    enabled: Boolean(user?.id),
+  });
+
+  useEffect(() => {
+    if (!profileQuery.data) return;
+    setProfileValues({
+      firstName: profileQuery.data.firstName,
+      lastName: profileQuery.data.lastName,
+      imageUrl: profileQuery.data.imageUrl ?? "",
+    });
+  }, [profileQuery.data]);
+
+  const updateMutation = useMutation({
+    mutationFn: updateProfile,
+    onSuccess: async (result) => {
+      updateUser(result);
+      await queryClient.invalidateQueries({ queryKey: ["users", "me"] });
+      setEditing(false);
+      setProfileErrors({});
+      toastSuccess("Your profile has been updated.", "Profile saved");
+    },
+    onError: (error: unknown) => {
+      toastError(error, "Couldn’t update profile");
+    },
+  });
+
+  const passwordMutation = useMutation({
+    mutationFn: changePassword,
+    onSuccess: () => {
+      setPasswordValues({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      setPasswordErrors({});
+      toastSuccess("Your password has been changed.", "Password updated");
+    },
+    onError: (error: unknown) => {
+      toastError(error, "Couldn’t change password");
+    },
+  });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteBlog(id),
@@ -109,15 +188,60 @@ function ProfileContent() {
     return <PageSkeleton variant="page" />;
   }
 
-  const firstName = user.firstName ?? "";
-  const lastName = user.lastName ?? "";
+  const profile = profileQuery.data;
+  const firstName = profile?.firstName ?? user.firstName ?? "";
+  const lastName = profile?.lastName ?? user.lastName ?? "";
+  const username = profile?.username ?? user.username ?? "";
+  const email = profile?.email ?? user.email;
+  const imageUrl = profile?.imageUrl ?? user.imageUrl;
   const initials =
     `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() ||
-    (user.email?.charAt(0).toUpperCase() ?? "?");
+    (email?.charAt(0).toUpperCase() ?? "?");
 
+  const myBlogs = blogsQuery.data ?? [];
   const blogsError = blogsQuery.isError
     ? getApiErrorMessages(blogsQuery.error).join("; ")
     : null;
+  const profileError = profileQuery.isError
+    ? getApiErrorMessages(profileQuery.error).join("; ")
+    : null;
+
+  function handleProfileSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const errors = validateProfileForm(profileValues);
+    setProfileErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    updateMutation.mutate({
+      firstName: profileValues.firstName.trim(),
+      lastName: profileValues.lastName.trim(),
+      imageUrl: profileValues.imageUrl.trim() || null,
+    });
+  }
+
+  function handlePasswordSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const errors = validateChangePasswordForm(passwordValues);
+    setPasswordErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    passwordMutation.mutate({
+      currentPassword: passwordValues.currentPassword,
+      newPassword: passwordValues.newPassword,
+    });
+  }
+
+  function cancelEditing() {
+    setEditing(false);
+    setProfileErrors({});
+    if (profile) {
+      setProfileValues({
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        imageUrl: profile.imageUrl ?? "",
+      });
+    }
+  }
 
   return (
     <main className="min-h-full flex-1 bg-zinc-50">
@@ -137,22 +261,65 @@ function ProfileContent() {
               Account details and the posts you have published.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={logout}
-            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
-          >
-            Log out
-          </button>
+          <div className="flex flex-wrap gap-2">
+            {username ? (
+              <Link
+                href={`/authors/${encodeURIComponent(username)}`}
+                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+              >
+                View public profile
+              </Link>
+            ) : null}
+            <button
+              type="button"
+              onClick={logout}
+              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+            >
+              Log out
+            </button>
+          </div>
         </div>
 
+        {profileError ? (
+          <div
+            role="alert"
+            className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-6 text-sm text-red-700"
+          >
+            <p className="font-medium">Couldn’t load profile</p>
+            <p className="mt-1">{profileError}</p>
+            <button
+              type="button"
+              onClick={() => profileQuery.refetch()}
+              className="mt-4 rounded-lg bg-red-700 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-800"
+            >
+              Try again
+            </button>
+          </div>
+        ) : null}
+
         <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold tracking-tight text-zinc-900">
+              Account
+            </h2>
+            {!editing ? (
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                disabled={profileQuery.isLoading}
+                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-60"
+              >
+                Edit profile
+              </button>
+            ) : null}
+          </div>
+
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
             <div className="mx-auto h-24 w-24 shrink-0 overflow-hidden rounded-full bg-zinc-100 sm:mx-0">
-              {user.imageUrl ? (
+              {imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element -- profile URLs come from the API
                 <img
-                  src={user.imageUrl}
+                  src={imageUrl}
                   alt=""
                   className="h-full w-full object-cover"
                 />
@@ -163,43 +330,280 @@ function ProfileContent() {
               )}
             </div>
 
-            <dl className="grid min-w-0 flex-1 gap-4 sm:grid-cols-2">
-              <div>
-                <dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
-                  First name
-                </dt>
-                <dd className="mt-1 text-sm font-medium text-zinc-900">
-                  {firstName || "—"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
-                  Last name
-                </dt>
-                <dd className="mt-1 text-sm font-medium text-zinc-900">
-                  {lastName || "—"}
-                </dd>
-              </div>
-              <div className="sm:col-span-2">
-                <dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
-                  Email
-                </dt>
-                <dd className="mt-1 break-all text-sm font-medium text-zinc-900">
-                  {user.email}
-                </dd>
-              </div>
-              {user.imageUrl ? (
+            {editing ? (
+              <form
+                onSubmit={handleProfileSubmit}
+                className="grid min-w-0 flex-1 gap-4 sm:grid-cols-2"
+              >
+                <div>
+                  <label
+                    htmlFor="profile-firstName"
+                    className="text-xs font-medium tracking-wide text-zinc-500 uppercase"
+                  >
+                    First name
+                  </label>
+                  <input
+                    id="profile-firstName"
+                    name="firstName"
+                    value={profileValues.firstName}
+                    onChange={(e) =>
+                      setProfileValues((prev) => ({
+                        ...prev,
+                        firstName: e.target.value,
+                      }))
+                    }
+                    aria-invalid={Boolean(profileErrors.firstName)}
+                    className={fieldClassName(Boolean(profileErrors.firstName))}
+                  />
+                  {profileErrors.firstName ? (
+                    <p className="mt-1.5 text-xs text-red-600">
+                      {profileErrors.firstName}
+                    </p>
+                  ) : null}
+                </div>
+                <div>
+                  <label
+                    htmlFor="profile-lastName"
+                    className="text-xs font-medium tracking-wide text-zinc-500 uppercase"
+                  >
+                    Last name
+                  </label>
+                  <input
+                    id="profile-lastName"
+                    name="lastName"
+                    value={profileValues.lastName}
+                    onChange={(e) =>
+                      setProfileValues((prev) => ({
+                        ...prev,
+                        lastName: e.target.value,
+                      }))
+                    }
+                    aria-invalid={Boolean(profileErrors.lastName)}
+                    className={fieldClassName(Boolean(profileErrors.lastName))}
+                  />
+                  {profileErrors.lastName ? (
+                    <p className="mt-1.5 text-xs text-red-600">
+                      {profileErrors.lastName}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="sm:col-span-2">
+                  <label
+                    htmlFor="profile-imageUrl"
+                    className="text-xs font-medium tracking-wide text-zinc-500 uppercase"
+                  >
+                    Image URL
+                  </label>
+                  <input
+                    id="profile-imageUrl"
+                    name="imageUrl"
+                    value={profileValues.imageUrl}
+                    onChange={(e) =>
+                      setProfileValues((prev) => ({
+                        ...prev,
+                        imageUrl: e.target.value,
+                      }))
+                    }
+                    placeholder="https://…"
+                    aria-invalid={Boolean(profileErrors.imageUrl)}
+                    className={fieldClassName(Boolean(profileErrors.imageUrl))}
+                  />
+                  {profileErrors.imageUrl ? (
+                    <p className="mt-1.5 text-xs text-red-600">
+                      {profileErrors.imageUrl}
+                    </p>
+                  ) : null}
+                </div>
                 <div className="sm:col-span-2">
                   <dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
-                    Image URL
+                    Email
                   </dt>
-                  <dd className="mt-1 break-all text-sm text-zinc-700">
-                    {user.imageUrl}
+                  <dd className="mt-1 break-all text-sm font-medium text-zinc-900">
+                    {email}
                   </dd>
                 </div>
-              ) : null}
-            </dl>
+                <div className="sm:col-span-2">
+                  <dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
+                    Username
+                  </dt>
+                  <dd className="mt-1 text-sm font-medium text-zinc-900">
+                    {username || "—"}
+                  </dd>
+                </div>
+                <div className="flex flex-wrap gap-2 sm:col-span-2">
+                  <button
+                    type="submit"
+                    disabled={updateMutation.isPending}
+                    className="rounded-lg bg-zinc-900 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-60"
+                  >
+                    {updateMutation.isPending ? "Saving…" : "Save changes"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelEditing}
+                    disabled={updateMutation.isPending}
+                    className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-60"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <dl className="grid min-w-0 flex-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
+                    First name
+                  </dt>
+                  <dd className="mt-1 text-sm font-medium text-zinc-900">
+                    {profileQuery.isLoading ? "…" : firstName || "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
+                    Last name
+                  </dt>
+                  <dd className="mt-1 text-sm font-medium text-zinc-900">
+                    {profileQuery.isLoading ? "…" : lastName || "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
+                    Username
+                  </dt>
+                  <dd className="mt-1 text-sm font-medium text-zinc-900">
+                    {profileQuery.isLoading ? "…" : username || "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
+                    Email
+                  </dt>
+                  <dd className="mt-1 break-all text-sm font-medium text-zinc-900">
+                    {email}
+                  </dd>
+                </div>
+                {imageUrl ? (
+                  <div className="sm:col-span-2">
+                    <dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
+                      Image URL
+                    </dt>
+                    <dd className="mt-1 break-all text-sm text-zinc-700">
+                      {imageUrl}
+                    </dd>
+                  </div>
+                ) : null}
+              </dl>
+            )}
           </div>
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
+          <h2 className="text-lg font-semibold tracking-tight text-zinc-900">
+            Change password
+          </h2>
+          <p className="mt-1 text-sm text-zinc-600">
+            Choose a strong password you have not used here before.
+          </p>
+          <form
+            onSubmit={handlePasswordSubmit}
+            className="mt-6 grid max-w-md gap-4"
+          >
+            <div>
+              <label
+                htmlFor="currentPassword"
+                className="text-xs font-medium tracking-wide text-zinc-500 uppercase"
+              >
+                Current password
+              </label>
+              <input
+                id="currentPassword"
+                name="currentPassword"
+                type="password"
+                autoComplete="current-password"
+                value={passwordValues.currentPassword}
+                onChange={(e) =>
+                  setPasswordValues((prev) => ({
+                    ...prev,
+                    currentPassword: e.target.value,
+                  }))
+                }
+                aria-invalid={Boolean(passwordErrors.currentPassword)}
+                className={fieldClassName(Boolean(passwordErrors.currentPassword))}
+              />
+              {passwordErrors.currentPassword ? (
+                <p className="mt-1.5 text-xs text-red-600">
+                  {passwordErrors.currentPassword}
+                </p>
+              ) : null}
+            </div>
+            <div>
+              <label
+                htmlFor="newPassword"
+                className="text-xs font-medium tracking-wide text-zinc-500 uppercase"
+              >
+                New password
+              </label>
+              <input
+                id="newPassword"
+                name="newPassword"
+                type="password"
+                autoComplete="new-password"
+                value={passwordValues.newPassword}
+                onChange={(e) =>
+                  setPasswordValues((prev) => ({
+                    ...prev,
+                    newPassword: e.target.value,
+                  }))
+                }
+                aria-invalid={Boolean(passwordErrors.newPassword)}
+                className={fieldClassName(Boolean(passwordErrors.newPassword))}
+              />
+              {passwordErrors.newPassword ? (
+                <p className="mt-1.5 text-xs text-red-600">
+                  {passwordErrors.newPassword}
+                </p>
+              ) : null}
+            </div>
+            <div>
+              <label
+                htmlFor="confirmPassword"
+                className="text-xs font-medium tracking-wide text-zinc-500 uppercase"
+              >
+                Confirm new password
+              </label>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                value={passwordValues.confirmPassword}
+                onChange={(e) =>
+                  setPasswordValues((prev) => ({
+                    ...prev,
+                    confirmPassword: e.target.value,
+                  }))
+                }
+                aria-invalid={Boolean(passwordErrors.confirmPassword)}
+                className={fieldClassName(Boolean(passwordErrors.confirmPassword))}
+              />
+              {passwordErrors.confirmPassword ? (
+                <p className="mt-1.5 text-xs text-red-600">
+                  {passwordErrors.confirmPassword}
+                </p>
+              ) : null}
+            </div>
+            <div>
+              <button
+                type="submit"
+                disabled={passwordMutation.isPending}
+                className="rounded-lg bg-zinc-900 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-60"
+              >
+                {passwordMutation.isPending
+                  ? "Updating…"
+                  : "Update password"}
+              </button>
+            </div>
+          </form>
         </section>
 
         <section className="mt-10">
@@ -269,8 +673,7 @@ function ProfileContent() {
                   blog={blog}
                   onDelete={setPendingDelete}
                   isDeleting={
-                    deleteMutation.isPending &&
-                    pendingDelete?.id === blog.id
+                    deleteMutation.isPending && pendingDelete?.id === blog.id
                   }
                 />
               ))}

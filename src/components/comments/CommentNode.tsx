@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createComment } from "@/api/comments";
@@ -19,9 +20,11 @@ export function CommentNode({ comment, blogId }: CommentNodeProps) {
   const [isReplying, setIsReplying] = useState(false);
   const [replyBody, setReplyBody] = useState("");
   const [replyError, setReplyError] = useState<string | null>(null);
+  const [repliesOpen, setRepliesOpen] = useState(false);
 
   const replies = comment.replies ?? [];
   const authorName = comment.user?.username ?? "Anonymous";
+  const authorUsername = comment.user?.username;
 
   const replyMutation = useMutation({
     mutationFn: createComment,
@@ -29,6 +32,7 @@ export function CommentNode({ comment, blogId }: CommentNodeProps) {
       setReplyBody("");
       setIsReplying(false);
       setReplyError(null);
+      setRepliesOpen(true);
       await queryClient.invalidateQueries({
         queryKey: ["comments", blogId],
       });
@@ -63,7 +67,16 @@ export function CommentNode({ comment, blogId }: CommentNodeProps) {
     <li className="list-none">
       <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-sm font-medium text-zinc-900">{authorName}</p>
+          {authorUsername ? (
+            <Link
+              href={`/authors/${encodeURIComponent(authorUsername)}`}
+              className="text-sm font-medium text-zinc-900 hover:underline"
+            >
+              {authorName}
+            </Link>
+          ) : (
+            <p className="text-sm font-medium text-zinc-900">{authorName}</p>
+          )}
           <time
             className="text-xs text-zinc-400"
             dateTime={comment.createdAt}
@@ -130,11 +143,26 @@ export function CommentNode({ comment, blogId }: CommentNodeProps) {
       </div>
 
       {replies.length > 0 && (
-        <ul className="mt-3 space-y-3 border-l border-zinc-200 pl-4 sm:pl-6">
-          {replies.map((reply) => (
-            <CommentNode key={reply.id} comment={reply} blogId={blogId} />
-          ))}
-        </ul>
+        <>
+          <button
+            type="button"
+            onClick={() => setRepliesOpen((open) => !open)}
+            aria-expanded={repliesOpen}
+            className="mt-3 text-sm font-medium text-zinc-600 transition hover:text-zinc-900"
+          >
+            {repliesOpen
+              ? "Hide replies"
+              : `View ${replies.length} ${replies.length === 1 ? "reply" : "replies"}`}
+          </button>
+
+          {repliesOpen && (
+            <ul className="mt-3 space-y-3 border-l border-zinc-200 pl-4 sm:pl-6">
+              {replies.map((reply) => (
+                <CommentNode key={reply.id} comment={reply} blogId={blogId} />
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </li>
   );

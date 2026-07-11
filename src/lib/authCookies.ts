@@ -1,6 +1,7 @@
 export type PersistedAuthUser = {
   id: string;
   email: string;
+  username: string;
   firstName: string;
   lastName: string;
   imageUrl?: string | null;
@@ -79,6 +80,12 @@ export function persistAuthSession(
   writeCookie(USER_COOKIE, JSON.stringify(user), maxAge);
 }
 
+/** Updates the user cookie without rotating the refresh token. */
+export function persistAuthUser(user: PersistedAuthUser): void {
+  const maxAge = 60 * 60 * 24 * 7;
+  writeCookie(USER_COOKIE, JSON.stringify(user), maxAge);
+}
+
 export function readPersistedRefreshToken(): string | null {
   return readCookie(REFRESH_TOKEN_COOKIE);
 }
@@ -101,6 +108,8 @@ export function readPersistedUser(): PersistedAuthUser | null {
       return {
         id: parsed.id as string,
         email: parsed.email as string,
+        username:
+          typeof parsed.username === "string" ? parsed.username : "",
         firstName: parsed.firstName as string,
         lastName: parsed.lastName as string,
         imageUrl:

@@ -20,6 +20,12 @@ export function fetchBlogsByCategory(categoryId: string) {
   );
 }
 
+export function fetchBlogsByUserId(userId: string) {
+  return httpClient<GetBlogsQueryResult[]>(
+    `/api/blogs/user/${encodeURIComponent(userId)}`,
+  );
+}
+
 export function createBlog(command: CreateBlogCommand) {
   return httpClient<CreateBlogResult>("/api/blogs", {
     method: "POST",

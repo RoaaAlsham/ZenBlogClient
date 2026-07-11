@@ -41,6 +41,7 @@ export interface LoginCommand {
 export interface LoginResult {
   userId: string;
   email: string;
+  username: string;
   firstName: string;
   lastName: string;
   imageUrl?: string | null;
@@ -93,6 +94,34 @@ export interface GetAllUsersQueryResult {
   imageUrl?: string | null;
 }
 
+export interface UserProfileResult {
+  id: string;
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  imageUrl?: string | null;
+}
+
+export interface PublicUserResult {
+  id: string;
+  username: string;
+  firstName: string;
+  lastName: string;
+  imageUrl?: string | null;
+}
+
+export interface UpdateProfileCommand {
+  firstName: string;
+  lastName: string;
+  imageUrl?: string | null;
+}
+
+export interface ChangePasswordCommand {
+  currentPassword: string;
+  newPassword: string;
+}
+
 // ─── Category ───────────────────────────────────────────────────────────────
 
 export interface CategoryDto extends BaseDto {
@@ -119,17 +148,16 @@ export interface BlogDto extends BaseDto {
   title: string;
   description: string;
   coverImageUrl?: string | null;
-  blogImageUrl?: string | null;
 }
 
 export interface GetBlogsQueryResult extends BaseDto {
   title: string;
   description: string;
   coverImageUrl?: string | null;
-  blogImageUrl?: string | null;
   categoryId: string;
   userId: string;
   category: CategoryDto;
+  user?: UserDto;
 }
 
 /** Body for POST /blogs. UserId is set server-side from the JWT — do not send it. */
@@ -137,7 +165,6 @@ export interface CreateBlogCommand {
   title: string;
   description: string;
   coverImageUrl: string;
-  blogImageUrl: string;
   categoryId: string;
 }
 
@@ -151,7 +178,6 @@ export interface UpdateBlogCommand {
   title: string;
   description: string;
   coverImageUrl?: string | null;
-  blogImageUrl?: string | null;
   categoryId: string;
 }
 
