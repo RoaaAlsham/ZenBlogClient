@@ -3,6 +3,8 @@
 import { FormEvent, Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { fetchSiteSettings } from "@/api/settings";
 import { registerUser } from "@/api/users";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { getLoginErrorMessages, useAuth } from "@/context/AuthContext";
@@ -41,7 +43,13 @@ function RegisterForm() {
   const [formErrors, setFormErrors] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const settingsQuery = useQuery({
+    queryKey: ["site-settings"],
+    queryFn: fetchSiteSettings,
+  });
+
   const nextPath = searchParams.get("next") || "/";
+  const allowRegistrations = settingsQuery.data?.allowRegistrations === true;
 
   useEffect(() => {
     if (isReady && isAuthenticated) {
@@ -99,8 +107,63 @@ function RegisterForm() {
     }
   }
 
-  if (!isReady) {
+  if (!isReady || settingsQuery.isLoading) {
     return <PageSkeleton variant="auth" />;
+  }
+
+  if (settingsQuery.isError) {
+    return (
+      <main className="flex min-h-full flex-1 items-center justify-center bg-zinc-50 px-4 py-16">
+        <div className="w-full max-w-md rounded-2xl border border-red-200 bg-white p-8 text-center shadow-sm">
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+            Couldn’t load registration status
+          </h1>
+          <p className="mt-2 text-sm text-zinc-600">
+            Try again in a moment, or sign in if you already have an account.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => settingsQuery.refetch()}
+              className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-800"
+            >
+              Try again
+            </button>
+            <Link
+              href="/login"
+              className="rounded-lg border border-zinc-300 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+            >
+              Sign in
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!allowRegistrations) {
+    return (
+      <main className="flex min-h-full flex-1 items-center justify-center bg-zinc-50 px-4 py-16">
+        <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 text-center shadow-sm">
+          <p className="text-sm font-medium tracking-[0.2em] text-zinc-500 uppercase">
+            ZenBlog
+          </p>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900">
+            Registration is closed
+          </h1>
+          <p className="mt-2 text-sm leading-6 text-zinc-600">
+            New accounts are not being accepted right now. If you already have
+            an account, you can still sign in.
+          </p>
+          <Link
+            href="/login"
+            className="mt-6 inline-flex rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-800"
+          >
+            Sign in
+          </Link>
+        </div>
+      </main>
+    );
   }
 
   return (

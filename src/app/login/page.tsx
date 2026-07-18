@@ -3,6 +3,8 @@
 import { FormEvent, Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { fetchSiteSettings } from "@/api/settings";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { getLoginErrorMessages, useAuth } from "@/context/AuthContext";
 import { useToast } from "@/providers/ToastProvider";
@@ -18,7 +20,13 @@ function LoginForm() {
   const [errors, setErrors] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const settingsQuery = useQuery({
+    queryKey: ["site-settings"],
+    queryFn: fetchSiteSettings,
+  });
+
   const nextPath = searchParams.get("next") || "/";
+  const allowRegistrations = settingsQuery.data?.allowRegistrations === true;
 
   useEffect(() => {
     if (isReady && isAuthenticated) {
@@ -116,15 +124,17 @@ function LoginForm() {
             {isSubmitting ? "Signing in…" : "Sign in"}
           </button>
 
-          <p className="mt-6 text-center text-sm text-zinc-600">
-            Don&apos;t have an account?{" "}
-            <Link
-              href="/register"
-              className="font-medium text-zinc-900 underline-offset-4 hover:underline"
-            >
-              Sign up
-            </Link>
-          </p>
+          {allowRegistrations && (
+            <p className="mt-6 text-center text-sm text-zinc-600">
+              Don&apos;t have an account?{" "}
+              <Link
+                href="/register"
+                className="font-medium text-zinc-900 underline-offset-4 hover:underline"
+              >
+                Sign up
+              </Link>
+            </p>
+          )}
         </form>
       </div>
     </main>
