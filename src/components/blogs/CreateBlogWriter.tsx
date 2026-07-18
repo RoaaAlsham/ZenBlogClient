@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import {
@@ -9,6 +9,9 @@ import {
   useRef,
   useState,
 } from "react";
+import { getApiErrorMessages } from "@/api/httpClient";
+import { uploadImage } from "@/api/media";
+import { IMAGE_ACCEPT, validateImageFile } from "@/lib/imageValidation";
 import {
   insertImageMarkdown,
   insertLinkMarkdown,
@@ -47,6 +50,8 @@ export function CreateBlogWriter({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [urlPanel, setUrlPanel] = useState<UrlPanel>(null);
   const [panelUrl, setPanelUrl] = useState("");
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState<string | null>(null);
 
   const applyInsert = useCallback(
     (result: { value: string; selectionStart: number; selectionEnd: number }) => {
@@ -74,6 +79,7 @@ export function CreateBlogWriter({
     setUrlPanel((current) => {
       if (current === panel) return null;
       setPanelUrl("");
+      setImageUploadError(null);
       return panel;
     });
   }
@@ -102,17 +108,36 @@ export function CreateBlogWriter({
     applyInsert(prefixNumberedList(readSelection(textareaRef)));
   }
 
-  function handleInsertUrl() {
+  function handleInsertLink() {
     const url = panelUrl.trim();
-    if (!url || !urlPanel) return;
-    const selection = readSelection(textareaRef);
-    applyInsert(
-      urlPanel === "image"
-        ? insertImageMarkdown(selection, url)
-        : insertLinkMarkdown(selection, url),
-    );
+    if (!url) return;
+    applyInsert(insertLinkMarkdown(readSelection(textareaRef), url));
     setPanelUrl("");
     setUrlPanel(null);
+  }
+
+  async function handleImageFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      setImageUploadError(validationError);
+      return;
+    }
+
+    setImageUploading(true);
+    setImageUploadError(null);
+    try {
+      const uploaded = await uploadImage(file, "BlogBody");
+      applyInsert(insertImageMarkdown(readSelection(textareaRef), uploaded.url));
+      setUrlPanel(null);
+    } catch (error) {
+      setImageUploadError(getApiErrorMessages(error).join("; "));
+    } finally {
+      setImageUploading(false);
+    }
   }
 
   function handleBodyKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -198,7 +223,7 @@ export function CreateBlogWriter({
             className={toolbarBtn}
             title="Quote"
           >
-            “”
+            &ldquo;&rdquo;
           </button>
           <button
             type="button"
@@ -226,41 +251,58 @@ export function CreateBlogWriter({
           </button>
           <button
             type="button"
-            onClick={() => toggleUrlPanel("image")}
+            onClick={() => {
+              setImageUploadError(null);
+              setUrlPanel((current) => (current === "image" ? null : "image"));
+            }}
             className={toolbarBtn}
-            title="Insert image URL"
+            title="Insert image"
           >
             Image
           </button>
         </div>
 
-        {urlPanel ? (
+        {urlPanel === "link" ? (
           <div className="mt-3 flex flex-col gap-2 rounded-xl border border-zinc-200 bg-zinc-50 p-3 sm:flex-row sm:items-center">
             <input
               type="url"
               value={panelUrl}
               onChange={(e) => setPanelUrl(e.target.value)}
-              placeholder={
-                urlPanel === "image"
-                  ? "https://… image URL"
-                  : "https://… link URL"
-              }
+              placeholder="https://… link URL"
               className="w-full flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  handleInsertUrl();
+                  handleInsertLink();
                 }
               }}
             />
             <button
               type="button"
-              onClick={handleInsertUrl}
+              onClick={handleInsertLink}
               disabled={!panelUrl.trim()}
               className="rounded-lg bg-zinc-900 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Insert
             </button>
+          </div>
+        ) : null}
+
+        {urlPanel === "image" ? (
+          <div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+            <input
+              type="file"
+              accept={IMAGE_ACCEPT}
+              onChange={handleImageFileChange}
+              disabled={imageUploading}
+              className="block w-full text-sm text-zinc-700 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white"
+            />
+            {imageUploading ? (
+              <p className="mt-2 text-sm text-zinc-500">Uploading…</p>
+            ) : null}
+            {imageUploadError ? (
+              <p className="mt-2 text-sm text-red-600">{imageUploadError}</p>
+            ) : null}
           </div>
         ) : null}
 

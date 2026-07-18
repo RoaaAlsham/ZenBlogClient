@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState, type ChangeEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { deleteBlog, fetchBlogsByUserId } from "@/api/blogs";
 import { getApiErrorMessages } from "@/api/httpClient";
@@ -13,10 +13,12 @@ import {
   fetchCurrentUser,
   updateProfile,
 } from "@/api/users";
+import { uploadImage } from "@/api/media";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useAuth } from "@/context/AuthContext";
+import { IMAGE_ACCEPT, validateImageFile } from "@/lib/imageValidation";
 import {
   validateChangePasswordForm,
   validateProfileForm,
@@ -117,8 +119,10 @@ function ProfileContent() {
     firstName: "",
     lastName: "",
     imageUrl: "",
+    imagePublicId: "",
   });
   const [profileErrors, setProfileErrors] = useState<ProfileFieldErrors>({});
+  const [imageUploading, setImageUploading] = useState(false);
   const [passwordValues, setPasswordValues] = useState<ChangePasswordFormValues>(
     {
       currentPassword: "",
@@ -147,6 +151,7 @@ function ProfileContent() {
       firstName: profileQuery.data.firstName,
       lastName: profileQuery.data.lastName,
       imageUrl: profileQuery.data.imageUrl ?? "",
+      imagePublicId: profileQuery.data.imagePublicId ?? "",
     });
   }, [profileQuery.data]);
 
@@ -240,7 +245,49 @@ function ProfileContent() {
       firstName: profileValues.firstName.trim(),
       lastName: profileValues.lastName.trim(),
       imageUrl: profileValues.imageUrl.trim() || null,
+      imagePublicId: profileValues.imagePublicId.trim() || null,
     });
+  }
+
+  async function handleProfileImageChange(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      setProfileErrors((prev) => ({ ...prev, imageUrl: validationError }));
+      return;
+    }
+
+    setImageUploading(true);
+    setProfileErrors((prev) => ({ ...prev, imageUrl: undefined }));
+    try {
+      const uploaded = await uploadImage(file, "Profile");
+      setProfileValues((prev) => ({
+        ...prev,
+        imageUrl: uploaded.url,
+        imagePublicId: uploaded.publicId,
+      }));
+    } catch (error) {
+      setProfileErrors((prev) => ({
+        ...prev,
+        imageUrl: getApiErrorMessages(error).join("; "),
+      }));
+    } finally {
+      setImageUploading(false);
+    }
+  }
+
+  function clearProfileImage() {
+    setProfileValues((prev) => ({
+      ...prev,
+      imageUrl: "",
+      imagePublicId: "",
+    }));
+    setProfileErrors((prev) => ({ ...prev, imageUrl: undefined }));
   }
 
   function handlePasswordSubmit(event: FormEvent<HTMLFormElement>) {
@@ -263,6 +310,7 @@ function ProfileContent() {
         firstName: profile.firstName,
         lastName: profile.lastName,
         imageUrl: profile.imageUrl ?? "",
+        imagePublicId: profile.imagePublicId ?? "",
       });
     }
   }
@@ -413,29 +461,45 @@ function ProfileContent() {
                 </div>
                 <div className="sm:col-span-2">
                   <label
-                    htmlFor="profile-imageUrl"
+                    htmlFor="profile-image"
                     className="text-xs font-medium tracking-wide text-zinc-500 uppercase"
                   >
-                    Image URL
+                    Profile image
                   </label>
+                  {profileValues.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- uploaded CDN URL
+                    <img
+                      src={profileValues.imageUrl}
+                      alt=""
+                      className="mt-2 h-20 w-20 rounded-full object-cover"
+                    />
+                  ) : null}
                   <input
-                    id="profile-imageUrl"
-                    name="imageUrl"
-                    value={profileValues.imageUrl}
-                    onChange={(e) =>
-                      setProfileValues((prev) => ({
-                        ...prev,
-                        imageUrl: e.target.value,
-                      }))
-                    }
-                    placeholder="https://…"
+                    id="profile-image"
+                    type="file"
+                    accept={IMAGE_ACCEPT}
+                    onChange={handleProfileImageChange}
+                    disabled={imageUploading || updateMutation.isPending}
                     aria-invalid={Boolean(profileErrors.imageUrl)}
-                    className={fieldClassName(Boolean(profileErrors.imageUrl))}
+                    className="mt-2 block w-full text-sm text-zinc-700 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white"
                   />
+                  {imageUploading ? (
+                    <p className="mt-1.5 text-xs text-zinc-500">Uploading…</p>
+                  ) : null}
                   {profileErrors.imageUrl ? (
                     <p className="mt-1.5 text-xs text-red-600">
                       {profileErrors.imageUrl}
                     </p>
+                  ) : null}
+                  {profileValues.imageUrl ? (
+                    <button
+                      type="button"
+                      onClick={clearProfileImage}
+                      disabled={imageUploading || updateMutation.isPending}
+                      className="mt-2 text-sm font-medium text-zinc-600 underline-offset-2 hover:underline"
+                    >
+                      Remove image
+                    </button>
                   ) : null}
                 </div>
                 <div className="sm:col-span-2">
@@ -457,7 +521,9 @@ function ProfileContent() {
                 <div className="flex flex-wrap gap-2 sm:col-span-2">
                   <button
                     type="submit"
-                    disabled={updateMutation.isPending}
+                    disabled={
+                      updateMutation.isPending || imageUploading
+                    }
                     className="rounded-lg bg-zinc-900 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-60"
                   >
                     {updateMutation.isPending ? "Saving…" : "Save changes"}
@@ -465,7 +531,7 @@ function ProfileContent() {
                   <button
                     type="button"
                     onClick={cancelEditing}
-                    disabled={updateMutation.isPending}
+                    disabled={updateMutation.isPending || imageUploading}
                     className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-60"
                   >
                     Cancel
@@ -506,16 +572,6 @@ function ProfileContent() {
                     {email}
                   </dd>
                 </div>
-                {imageUrl ? (
-                  <div className="sm:col-span-2">
-                    <dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
-                      Image URL
-                    </dt>
-                    <dd className="mt-1 break-all text-sm text-zinc-700">
-                      {imageUrl}
-                    </dd>
-                  </div>
-                ) : null}
               </dl>
             )}
           </div>

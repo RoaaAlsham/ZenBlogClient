@@ -1,15 +1,19 @@
 "use client";
 
-import type { FormEvent } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 import type { CategoryDto } from "@/api/types";
 import { getApiErrorMessages } from "@/api/httpClient";
+import { uploadImage } from "@/api/media";
 import { MarkdownContent } from "@/components/MarkdownContent";
+import { IMAGE_ACCEPT, validateImageFile } from "@/lib/imageValidation";
+import { useState } from "react";
 
 type CreateBlogPreviewProps = {
   title: string;
   description: string;
   categoryId: string;
   coverImageUrl: string;
+  coverImagePublicId: string;
   categories: CategoryDto[];
   categoriesLoading: boolean;
   categoriesError: unknown;
@@ -19,7 +23,7 @@ type CreateBlogPreviewProps = {
   formErrors: string[];
   isPublishing: boolean;
   onCategoryChange: (value: string) => void;
-  onCoverImageUrlChange: (value: string) => void;
+  onCoverImageChange: (url: string, publicId: string) => void;
   onBack: () => void;
   onPublish: (event: FormEvent<HTMLFormElement>) => void;
 };
@@ -29,6 +33,7 @@ export function CreateBlogPreview({
   description,
   categoryId,
   coverImageUrl,
+  coverImagePublicId,
   categories,
   categoriesLoading,
   categoriesError,
@@ -36,11 +41,36 @@ export function CreateBlogPreview({
   formErrors,
   isPublishing,
   onCategoryChange,
-  onCoverImageUrlChange,
+  onCoverImageChange,
   onBack,
   onPublish,
 }: CreateBlogPreviewProps) {
   const cover = coverImageUrl.trim();
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  async function handleCoverChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      setUploadError(validationError);
+      return;
+    }
+
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const uploaded = await uploadImage(file, "BlogCover");
+      onCoverImageChange(uploaded.url, uploaded.publicId);
+    } catch (error) {
+      setUploadError(getApiErrorMessages(error).join("; "));
+    } finally {
+      setUploading(false);
+    }
+  }
 
   return (
     <main className="min-h-full flex-1 bg-white px-4 py-8 sm:px-6 lg:px-10">
@@ -137,20 +167,35 @@ export function CreateBlogPreview({
 
           <div>
             <label
-              htmlFor="coverImageUrl"
+              htmlFor="coverImage"
               className="mb-2 block text-sm font-medium text-zinc-800"
             >
-              Cover image URL
+              Cover image
             </label>
             <input
-              id="coverImageUrl"
-              type="url"
-              name="coverImageUrl"
-              value={coverImageUrl}
-              onChange={(e) => onCoverImageUrlChange(e.target.value)}
-              placeholder="https://…"
-              className="w-full rounded-full border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-zinc-900 focus:bg-white focus:ring-2 focus:ring-zinc-900/10"
+              id="coverImage"
+              type="file"
+              accept={IMAGE_ACCEPT}
+              onChange={handleCoverChange}
+              disabled={uploading || isPublishing}
+              className="block w-full text-sm text-zinc-700 file:mr-3 file:rounded-full file:border-0 file:bg-zinc-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white"
             />
+            {uploading ? (
+              <p className="mt-1.5 text-sm text-zinc-500">Uploading…</p>
+            ) : null}
+            {uploadError ? (
+              <p className="mt-1.5 text-sm text-red-600">{uploadError}</p>
+            ) : null}
+            {coverImagePublicId ? (
+              <button
+                type="button"
+                onClick={() => onCoverImageChange("", "")}
+                disabled={uploading || isPublishing}
+                className="mt-2 text-sm font-medium text-zinc-600 underline-offset-2 hover:underline"
+              >
+                Remove cover
+              </button>
+            ) : null}
           </div>
 
           <button
@@ -164,7 +209,7 @@ export function CreateBlogPreview({
           <div className="mt-auto flex items-center justify-end gap-2 pt-4">
             <button
               type="submit"
-              disabled={isPublishing || categoriesLoading}
+              disabled={isPublishing || categoriesLoading || uploading}
               className="rounded-full bg-zinc-900 px-8 py-3.5 text-base font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isPublishing ? "Publishing…" : "Publish"}

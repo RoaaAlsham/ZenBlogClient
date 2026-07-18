@@ -128,9 +128,11 @@ export async function httpClient<T>(
   }
 
   const { method = "GET", body, skipAuth = false, headers, ...rest } = options;
+  const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
 
   const requestHeaders = new Headers(headers);
-  if (body !== undefined && !requestHeaders.has("Content-Type")) {
+  // Let the browser set multipart boundary for FormData; only force JSON otherwise.
+  if (body !== undefined && !isFormData && !requestHeaders.has("Content-Type")) {
     requestHeaders.set("Content-Type", "application/json");
   }
 
@@ -149,7 +151,12 @@ export async function httpClient<T>(
     ...rest,
     method,
     headers: requestHeaders,
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body:
+      body === undefined
+        ? undefined
+        : isFormData
+          ? (body as FormData)
+          : JSON.stringify(body),
   });
 
   if (response.status === 204) {

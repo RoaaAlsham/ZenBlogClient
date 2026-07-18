@@ -30,6 +30,7 @@ function CreateBlogForm() {
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
+  const [coverImagePublicId, setCoverImagePublicId] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formErrors, setFormErrors] = useState<string[]>([]);
 
@@ -100,7 +101,8 @@ function CreateBlogForm() {
       title: title.trim(),
       description: description.trim(),
       categoryId,
-      coverImageUrl: coverImageUrl.trim(),
+      coverImageUrl: coverImageUrl.trim() || null,
+      coverImagePublicId: coverImagePublicId.trim() || null,
     });
   }
 
@@ -124,6 +126,7 @@ function CreateBlogForm() {
       description={description}
       categoryId={categoryId}
       coverImageUrl={coverImageUrl}
+      coverImagePublicId={coverImagePublicId}
       categories={categories}
       categoriesLoading={categoriesQuery.isLoading}
       categoriesError={categoriesQuery.isError ? categoriesQuery.error : null}
@@ -131,7 +134,10 @@ function CreateBlogForm() {
       formErrors={formErrors}
       isPublishing={mutation.isPending}
       onCategoryChange={setCategoryId}
-      onCoverImageUrlChange={setCoverImageUrl}
+      onCoverImageChange={(url, publicId) => {
+        setCoverImageUrl(url);
+        setCoverImagePublicId(publicId);
+      }}
       onBack={() => {
         setFieldErrors((prev) => ({
           title: prev.title,

@@ -1,16 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { fetchBlogById, updateBlog } from "@/api/blogs";
 import { fetchCategories } from "@/api/categories";
 import { getApiErrorMessages } from "@/api/httpClient";
+import { uploadImage } from "@/api/media";
 import type { UpdateBlogCommand } from "@/api/types";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useAuth } from "@/context/AuthContext";
+import { IMAGE_ACCEPT, validateImageFile } from "@/lib/imageValidation";
 import { useToast } from "@/providers/ToastProvider";
 
 type FieldErrors = {
@@ -51,6 +53,9 @@ function EditBlogForm() {
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
+  const [coverImagePublicId, setCoverImagePublicId] = useState("");
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formErrors, setFormErrors] = useState<string[]>([]);
   const [hydrated, setHydrated] = useState(false);
@@ -82,6 +87,7 @@ function EditBlogForm() {
     setDescription(blogQuery.data.description);
     setCategoryId(blogQuery.data.categoryId);
     setCoverImageUrl(blogQuery.data.coverImageUrl ?? "");
+    setCoverImagePublicId(blogQuery.data.coverImagePublicId ?? "");
     setHydrated(true);
   }, [blogQuery.data, hydrated, id, router, toastError, user]);
 
@@ -125,7 +131,34 @@ function EditBlogForm() {
       description: description.trim(),
       categoryId,
       coverImageUrl: coverImageUrl.trim() || null,
+      coverImagePublicId: coverImagePublicId.trim() || null,
     });
+  }
+
+  async function handleCoverChange(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      setCoverUploadError(validationError);
+      return;
+    }
+
+    setCoverUploading(true);
+    setCoverUploadError(null);
+    try {
+      const uploaded = await uploadImage(file, "BlogCover");
+      setCoverImageUrl(uploaded.url);
+      setCoverImagePublicId(uploaded.publicId);
+    } catch (error) {
+      setCoverUploadError(getApiErrorMessages(error).join("; "));
+    } finally {
+      setCoverUploading(false);
+    }
   }
 
   if (blogQuery.isLoading || !hydrated) {
@@ -255,16 +288,43 @@ function EditBlogForm() {
 
           <label className="block">
             <span className="mb-1.5 block text-sm font-medium text-zinc-700">
-              Cover image URL
+              Cover image
             </span>
+            {coverImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- uploaded CDN URL
+              <img
+                src={coverImageUrl}
+                alt=""
+                className="mb-3 aspect-[16/9] w-full rounded-lg object-cover"
+              />
+            ) : null}
             <input
-              type="url"
-              name="coverImageUrl"
-              value={coverImageUrl}
-              onChange={(e) => setCoverImageUrl(e.target.value)}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-zinc-900 outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
-              placeholder="https://…"
+              type="file"
+              accept={IMAGE_ACCEPT}
+              onChange={handleCoverChange}
+              disabled={coverUploading || mutation.isPending}
+              className="block w-full text-sm text-zinc-700 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white"
             />
+            {coverUploading ? (
+              <p className="mt-1.5 text-sm text-zinc-500">Uploading…</p>
+            ) : null}
+            {coverUploadError ? (
+              <p className="mt-1.5 text-sm text-red-600">{coverUploadError}</p>
+            ) : null}
+            {coverImageUrl ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setCoverImageUrl("");
+                  setCoverImagePublicId("");
+                  setCoverUploadError(null);
+                }}
+                disabled={coverUploading || mutation.isPending}
+                className="mt-2 text-sm font-medium text-zinc-600 underline-offset-2 hover:underline"
+              >
+                Remove cover
+              </button>
+            ) : null}
           </label>
 
           <div className="flex items-center justify-end gap-3 pt-2">
@@ -276,7 +336,11 @@ function EditBlogForm() {
             </Link>
             <button
               type="submit"
-              disabled={mutation.isPending || categoriesQuery.isLoading}
+              disabled={
+                mutation.isPending ||
+                categoriesQuery.isLoading ||
+                coverUploading
+              }
               className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {mutation.isPending ? "Saving…" : "Save changes"}

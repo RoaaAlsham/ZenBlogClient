@@ -2,6 +2,7 @@ export type ProfileFormValues = {
   firstName: string;
   lastName: string;
   imageUrl: string;
+  imagePublicId: string;
 };
 
 export type ProfileFieldErrors = Partial<Record<keyof ProfileFormValues, string>>;
@@ -17,7 +18,8 @@ export type ChangePasswordFieldErrors = Partial<
 >;
 
 /**
- * Client-side rules mirrored from UpdateProfileCommandValidator.
+ * Client-side rules mirrored from UpdateProfileCommandValidator (names only;
+ * images are validated as files before upload).
  */
 export function validateProfileForm(
   values: ProfileFormValues,
@@ -36,22 +38,6 @@ export function validateProfileForm(
     errors.lastName = "Last name is required.";
   } else if (lastName.length > 50) {
     errors.lastName = "Last name must be at most 50 characters.";
-  }
-
-  const imageUrl = values.imageUrl.trim();
-  if (imageUrl) {
-    if (imageUrl.length > 2048) {
-      errors.imageUrl = "Image URL must be at most 2048 characters.";
-    } else {
-      try {
-        const url = new URL(imageUrl);
-        if (url.protocol !== "http:" && url.protocol !== "https:") {
-          errors.imageUrl = "Image URL must be a valid http(s) URL.";
-        }
-      } catch {
-        errors.imageUrl = "Image URL must be a valid http(s) URL.";
-      }
-    }
   }
 
   return errors;

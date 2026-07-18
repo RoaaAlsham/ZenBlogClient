@@ -101,6 +101,7 @@ export interface UserProfileResult {
   firstName: string;
   lastName: string;
   imageUrl?: string | null;
+  imagePublicId?: string | null;
 }
 
 export interface PublicUserResult {
@@ -115,6 +116,14 @@ export interface UpdateProfileCommand {
   firstName: string;
   lastName: string;
   imageUrl?: string | null;
+  imagePublicId?: string | null;
+}
+
+export type ImageUploadPurpose = "Profile" | "BlogCover" | "BlogBody";
+
+export interface UploadImageResult {
+  url: string;
+  publicId: string;
 }
 
 export interface ChangePasswordCommand {
@@ -152,12 +161,14 @@ export interface BlogDto extends BaseDto {
   title: string;
   description: string;
   coverImageUrl?: string | null;
+  coverImagePublicId?: string | null;
 }
 
 export interface GetBlogsQueryResult extends BaseDto {
   title: string;
   description: string;
   coverImageUrl?: string | null;
+  coverImagePublicId?: string | null;
   categoryId: string;
   userId: string;
   category: CategoryDto;
@@ -168,7 +179,8 @@ export interface GetBlogsQueryResult extends BaseDto {
 export interface CreateBlogCommand {
   title: string;
   description: string;
-  coverImageUrl: string;
+  coverImageUrl?: string | null;
+  coverImagePublicId?: string | null;
   categoryId: string;
 }
 
@@ -182,6 +194,7 @@ export interface UpdateBlogCommand {
   title: string;
   description: string;
   coverImageUrl?: string | null;
+  coverImagePublicId?: string | null;
   categoryId: string;
 }
 
