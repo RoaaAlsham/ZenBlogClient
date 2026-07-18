@@ -1,13 +1,39 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getApiErrorMessages } from "@/api/httpClient";
-import { fetchUsers } from "@/api/users";
+import type { GetAllUsersQueryResult } from "@/api/types";
+import { deleteUser, fetchUsers } from "@/api/users";
+import { ConfirmModal } from "@/components/ConfirmModal";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/providers/ToastProvider";
 
 export function UsersAdminTab() {
+  const { user: currentUser } = useAuth();
+  const queryClient = useQueryClient();
+  const { toastError, toastSuccess } = useToast();
+  const [pendingDelete, setPendingDelete] =
+    useState<GetAllUsersQueryResult | null>(null);
+
   const usersQuery = useQuery({
     queryKey: ["users"],
     queryFn: fetchUsers,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteUser(id),
+    onSuccess: async () => {
+      setPendingDelete(null);
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      toastSuccess(
+        "The user and their posts/comments have been permanently removed.",
+        "User deleted",
+      );
+    },
+    onError: (error: unknown) => {
+      toastError(error, "Couldn’t delete user");
+    },
   });
 
   if (usersQuery.isLoading) {
@@ -67,47 +93,89 @@ export function UsersAdminTab() {
                 <th className="px-4 py-3 sm:px-5">Username</th>
                 <th className="px-4 py-3 sm:px-5">Email</th>
                 <th className="px-4 py-3 sm:px-5">ID</th>
+                <th className="px-4 py-3 sm:px-5">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
-              {users.map((user) => (
-                <tr key={user.id} className="align-middle">
-                  <td className="px-4 py-3 sm:px-5">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-zinc-100 text-xs font-semibold text-zinc-500">
-                        {user.imageUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={user.imageUrl}
-                            alt=""
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          (user.fullName || user.username || "?")
-                            .charAt(0)
-                            .toUpperCase()
-                        )}
+              {users.map((user) => {
+                const isSelf = user.id === currentUser?.id;
+                return (
+                  <tr key={user.id} className="align-middle">
+                    <td className="px-4 py-3 sm:px-5">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-zinc-100 text-xs font-semibold text-zinc-500">
+                          {user.imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={user.imageUrl}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            (user.fullName || user.username || "?")
+                              .charAt(0)
+                              .toUpperCase()
+                          )}
+                        </div>
+                        <span className="font-medium text-zinc-900">
+                          {user.fullName || "—"}
+                        </span>
                       </div>
-                      <span className="font-medium text-zinc-900">
-                        {user.fullName || "—"}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-zinc-700 sm:px-5">
-                    {user.username}
-                  </td>
-                  <td className="px-4 py-3 break-all text-zinc-700 sm:px-5">
-                    {user.email}
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs text-zinc-500 sm:px-5">
-                    {user.id}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-4 py-3 text-zinc-700 sm:px-5">
+                      {user.username}
+                    </td>
+                    <td className="px-4 py-3 break-all text-zinc-700 sm:px-5">
+                      {user.email}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-zinc-500 sm:px-5">
+                      {user.id}
+                    </td>
+                    <td className="px-4 py-3 sm:px-5">
+                      {isSelf ? (
+                        <span className="text-xs text-zinc-400">You</span>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={deleteMutation.isPending}
+                          onClick={() => setPendingDelete(user)}
+                          className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       )}
+
+      <ConfirmModal
+        open={pendingDelete !== null}
+        title="Delete user?"
+        description={
+          pendingDelete ? (
+            <>
+              Permanently delete{" "}
+              <strong>{pendingDelete.fullName || pendingDelete.username}</strong>
+              ? Their blogs and comments will be removed and cannot be
+              recovered.
+            </>
+          ) : null
+        }
+        confirmLabel="Delete user"
+        danger
+        confirming={deleteMutation.isPending}
+        onConfirm={() => {
+          if (pendingDelete) deleteMutation.mutate(pendingDelete.id);
+        }}
+        onCancel={() => {
+          if (!deleteMutation.isPending) setPendingDelete(null);
+        }}
+      />
     </>
   );
 }

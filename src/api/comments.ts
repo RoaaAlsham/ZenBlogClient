@@ -15,3 +15,9 @@ export function createComment(command: CreateCommentCommand) {
     body: command,
   });
 }
+
+export function deleteComment(id: string) {
+  return httpClient<void>(`/api/comments/${id}`, {
+    method: "DELETE",
+  });
+}

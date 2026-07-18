@@ -3,6 +3,7 @@ import type {
   ChangePasswordCommand,
   CreateUserCommand,
   CreateUserResult,
+  DeleteMyAccountCommand,
   GetAllUsersQueryResult,
   PublicUserResult,
   UpdateProfileCommand,
@@ -44,4 +45,17 @@ export function fetchPublicUserByUsername(username: string) {
     `/api/users/by-username/${encodeURIComponent(username)}`,
     { skipAuth: true },
   );
+}
+
+export function deleteMyAccount(command: DeleteMyAccountCommand) {
+  return httpClient<void>("/api/users/me", {
+    method: "DELETE",
+    body: command,
+  });
+}
+
+export function deleteUser(id: string) {
+  return httpClient<void>(`/api/users/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
 }

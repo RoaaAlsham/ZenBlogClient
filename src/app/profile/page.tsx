@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { deleteBlog, fetchBlogsByUserId } from "@/api/blogs";
@@ -8,6 +9,7 @@ import { getApiErrorMessages } from "@/api/httpClient";
 import type { GetBlogsQueryResult } from "@/api/types";
 import {
   changePassword,
+  deleteMyAccount,
   fetchCurrentUser,
   updateProfile,
 } from "@/api/users";
@@ -99,11 +101,17 @@ function ProfilePostCard({
 }
 
 function ProfileContent() {
+  const router = useRouter();
   const { user, logout, updateUser } = useAuth();
   const queryClient = useQueryClient();
   const { toastError, toastSuccess } = useToast();
   const [pendingDelete, setPendingDelete] =
     useState<GetBlogsQueryResult | null>(null);
+  const [confirmAccountDelete, setConfirmAccountDelete] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deletePasswordError, setDeletePasswordError] = useState<string | null>(
+    null,
+  );
   const [editing, setEditing] = useState(false);
   const [profileValues, setProfileValues] = useState<ProfileFormValues>({
     firstName: "",
@@ -182,6 +190,21 @@ function ProfileContent() {
     },
     onError: (error: unknown) => {
       toastError(error, "Couldn’t delete post");
+    },
+  });
+
+  const deleteAccountMutation = useMutation({
+    mutationFn: (currentPassword: string) =>
+      deleteMyAccount({ currentPassword }),
+    onSuccess: () => {
+      setConfirmAccountDelete(false);
+      setDeletePassword("");
+      logout();
+      toastSuccess("Your account has been permanently deleted.", "Account deleted");
+      router.replace("/");
+    },
+    onError: (error: unknown) => {
+      toastError(error, "Couldn’t delete account");
     },
   });
 
@@ -607,6 +630,57 @@ function ProfileContent() {
           </form>
         </section>
 
+        <section className="mt-6 rounded-2xl border border-red-200 bg-red-50/40 p-6 shadow-sm sm:p-8">
+          <h2 className="text-lg font-semibold tracking-tight text-red-900">
+            Delete account
+          </h2>
+          <p className="mt-1 text-sm text-red-800/80">
+            Permanently remove your account, blogs, and comments. This cannot be
+            undone.
+          </p>
+          <div className="mt-6 max-w-md space-y-4">
+            <div>
+              <label
+                htmlFor="deleteAccountPassword"
+                className="text-xs font-medium tracking-wide text-red-800/70 uppercase"
+              >
+                Confirm with your password
+              </label>
+              <input
+                id="deleteAccountPassword"
+                name="deleteAccountPassword"
+                type="password"
+                autoComplete="current-password"
+                value={deletePassword}
+                onChange={(e) => {
+                  setDeletePassword(e.target.value);
+                  if (deletePasswordError) setDeletePasswordError(null);
+                }}
+                aria-invalid={Boolean(deletePasswordError)}
+                className={fieldClassName(Boolean(deletePasswordError))}
+              />
+              {deletePasswordError ? (
+                <p className="mt-1.5 text-xs text-red-600">{deletePasswordError}</p>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              disabled={deleteAccountMutation.isPending}
+              onClick={() => {
+                if (!deletePassword.trim()) {
+                  setDeletePasswordError("Password is required.");
+                  return;
+                }
+                setDeletePasswordError(null);
+                setConfirmAccountDelete(true);
+              }}
+              className="rounded-lg border border-red-300 bg-white px-3.5 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Delete my account
+            </button>
+          </div>
+        </section>
+
         <section className="mt-10">
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
             <div>
@@ -704,6 +778,28 @@ function ProfileContent() {
         }}
         onConfirm={() => {
           if (pendingDelete) deleteMutation.mutate(pendingDelete.id);
+        }}
+      />
+
+      <ConfirmModal
+        open={confirmAccountDelete}
+        title="Delete your account?"
+        description={
+          <>
+            Your account, blogs, and comments will be permanently deleted. You
+            can register again later with the same email, but your content will
+            not come back.
+          </>
+        }
+        confirmLabel="Delete account"
+        cancelLabel="Keep account"
+        danger
+        confirming={deleteAccountMutation.isPending}
+        onCancel={() => {
+          if (!deleteAccountMutation.isPending) setConfirmAccountDelete(false);
+        }}
+        onConfirm={() => {
+          deleteAccountMutation.mutate(deletePassword);
         }}
       />
     </main>

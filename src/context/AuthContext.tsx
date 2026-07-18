@@ -17,7 +17,7 @@ import {
   setUnauthorizedHandler,
 } from "@/api/httpClient";
 import type { LoginResult, RefreshTokenResult, UserProfileResult } from "@/api/types";
-import { fetchUsers } from "@/api/users";
+import { fetchCurrentUser } from "@/api/users";
 import {
   clearAuthSessionCookies,
   persistAuthSession,
@@ -69,7 +69,7 @@ function normalizeAuthUser(nextUser: AuthUser): AuthUser {
 
 /**
  * Login payloads from older API builds omit first/last name. Fall back to
- * GET /users (fullName) so the profile session is still complete.
+ * GET /users/me so the profile session is still complete.
  */
 async function enrichAuthUser(baseUser: AuthUser): Promise<AuthUser> {
   const normalized = normalizeAuthUser(baseUser);
@@ -82,17 +82,13 @@ async function enrichAuthUser(baseUser: AuthUser): Promise<AuthUser> {
   }
 
   try {
-    const users = await fetchUsers();
-    const match = users.find((entry) => entry.id === normalized.id);
-    if (!match) return normalized;
-
-    const parts = (match.fullName ?? "").trim().split(/\s+/).filter(Boolean);
+    const me = await fetchCurrentUser();
     return {
       ...normalized,
-      username: normalized.username.trim() || match.username || "",
-      firstName: normalized.firstName.trim() || parts[0] || "",
-      lastName: normalized.lastName.trim() || parts.slice(1).join(" ") || "",
-      imageUrl: normalized.imageUrl ?? match.imageUrl,
+      username: normalized.username.trim() || me.username || "",
+      firstName: normalized.firstName.trim() || me.firstName || "",
+      lastName: normalized.lastName.trim() || me.lastName || "",
+      imageUrl: normalized.imageUrl ?? me.imageUrl,
     };
   } catch {
     return normalized;

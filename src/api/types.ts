@@ -122,6 +122,10 @@ export interface ChangePasswordCommand {
   newPassword: string;
 }
 
+export interface DeleteMyAccountCommand {
+  currentPassword: string;
+}
+
 // ─── Category ───────────────────────────────────────────────────────────────
 
 export interface CategoryDto extends BaseDto {
