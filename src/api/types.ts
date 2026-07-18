@@ -209,3 +209,11 @@ export interface UpdateCommentCommand {
   id: string;
   body: string;
 }
+
+export interface SiteSettingsResult {
+  allowRegistrations: boolean;
+}
+
+export interface UpdateSiteSettingsCommand {
+  allowRegistrations: boolean;
+}

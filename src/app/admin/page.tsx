@@ -4,17 +4,19 @@ import Link from "next/link";
 import { useState } from "react";
 import { BlogsAdminTab } from "@/components/admin/BlogsAdminTab";
 import { CategoriesAdminTab } from "@/components/admin/CategoriesAdminTab";
+import { SettingsAdminTab } from "@/components/admin/SettingsAdminTab";
 import { UsersAdminTab } from "@/components/admin/UsersAdminTab";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useAuth } from "@/context/AuthContext";
 
-type AdminTab = "blogs" | "categories" | "users";
+type AdminTab = "blogs" | "categories" | "users" | "settings";
 
 const TABS: { id: AdminTab; label: string }[] = [
   { id: "blogs", label: "Global Blog Management" },
   { id: "categories", label: "Category Management" },
   { id: "users", label: "User Management" },
+  { id: "settings", label: "Settings" },
 ];
 
 function ForbiddenScreen() {
@@ -76,7 +78,8 @@ function AdminDashboard() {
             Admin Dashboard
           </h1>
           <p className="mt-1 text-sm text-zinc-600">
-            Signed in as {user?.email}. Manage blogs, categories, and users.
+            Signed in as {user?.email}. Manage blogs, categories, users, and
+            site settings.
           </p>
         </div>
 
@@ -106,6 +109,7 @@ function AdminDashboard() {
           {activeTab === "blogs" && <BlogsAdminTab />}
           {activeTab === "categories" && <CategoriesAdminTab />}
           {activeTab === "users" && <UsersAdminTab />}
+          {activeTab === "settings" && <SettingsAdminTab />}
         </section>
       </div>
     </main>
