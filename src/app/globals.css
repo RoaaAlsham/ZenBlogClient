@@ -11,6 +11,12 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-writer: var(--font-amiri);
+  --font-brand: var(--font-cormorant), "Times New Roman", Times, serif;
+}
+
+@utility font-title {
+  font-family: var(--font-cormorant), "Times New Roman", Times, serif;
+  font-style: italic;
 }
 
 @media (prefers-color-scheme: dark) {

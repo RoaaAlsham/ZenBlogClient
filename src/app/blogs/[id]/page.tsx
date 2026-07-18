@@ -206,7 +206,7 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <h1
                   dir="auto"
-                  className="font-writer text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl"
+                  className="font-title text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl"
                 >
                   {blogQuery.data.title}
                 </h1>

@@ -71,7 +71,7 @@ function ProfilePostCard({
           <span className="inline-flex rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600">
             {blog.category?.categoryName ?? "Uncategorized"}
           </span>
-          <h3 className="mt-2 truncate text-lg font-semibold tracking-tight text-zinc-900">
+          <h3 className="font-title mt-2 truncate text-lg font-semibold tracking-tight text-zinc-900">
             <Link href={`/blogs/${blog.id}`} className="hover:underline">
               {blog.title}
             </Link>
@@ -326,7 +326,7 @@ function ProfileContent() {
             >
               ← Back to posts
             </Link>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900">
+            <h1 className="mt-3 font-title text-3xl font-semibold tracking-tight text-zinc-900">
               Your profile
             </h1>
             <p className="mt-1 text-sm text-zinc-600">

@@ -55,12 +55,12 @@ function LoginForm() {
     <main className="flex min-h-full flex-1 items-center justify-center bg-zinc-50 px-4 py-16">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <p className="text-sm font-medium tracking-[0.2em] text-zinc-500 uppercase">
-            ZenBlog
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900">
-            Sign in
+          <h1 className="font-title text-3xl font-bold tracking-tight text-zinc-900">
+            Visions by Roaa
           </h1>
+          <p className="mt-2 text-xl font-semibold tracking-tight text-zinc-900">
+            Sign in
+          </p>
           <p className="mt-2 text-sm text-zinc-600">
             Enter your credentials to continue.
           </p>

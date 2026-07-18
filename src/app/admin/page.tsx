@@ -26,7 +26,7 @@ function ForbiddenScreen() {
         <p className="text-sm font-semibold tracking-[0.2em] text-zinc-500 uppercase">
           403
         </p>
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-900">
+        <h1 className="mt-3 font-title text-2xl font-semibold tracking-tight text-zinc-900">
           Forbidden
         </h1>
         <p className="mt-2 text-sm leading-6 text-zinc-600">
@@ -74,7 +74,7 @@ function AdminDashboard() {
           >
             ← Back to posts
           </Link>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900">
+          <h1 className="mt-3 font-title text-3xl font-semibold tracking-tight text-zinc-900">
             Admin Dashboard
           </h1>
           <p className="mt-1 text-sm text-zinc-600">

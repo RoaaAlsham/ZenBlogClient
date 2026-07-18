@@ -80,7 +80,7 @@ export function CreateBlogPreview({
         noValidate
       >
         <section className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+          <h1 className="font-title text-2xl font-semibold tracking-tight text-zinc-900">
             Story preview
           </h1>
 
@@ -102,7 +102,7 @@ export function CreateBlogPreview({
 
           <h2
             dir="auto"
-            className="font-writer mt-8 text-3xl font-bold leading-tight text-zinc-900"
+            className="font-title mt-8 text-3xl font-bold leading-tight text-zinc-900"
           >
             {title.trim() || "Untitled"}
           </h2>

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Amiri, Geist, Geist_Mono } from "next/font/google";
+import { Amiri, Cormorant_Garamond, Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { ToastProvider } from "@/providers/ToastProvider";
@@ -21,9 +21,16 @@ const amiri = Amiri({
   variable: "--font-amiri",
 });
 
+const cormorantGaramond = Cormorant_Garamond({
+  weight: ["400", "600", "700"],
+  style: ["italic"],
+  subsets: ["latin"],
+  variable: "--font-cormorant",
+});
+
 export const metadata: Metadata = {
-  title: "ZenBlog",
-  description: "ZenBlog client",
+  title: "Visions by Roaa",
+  description: "A deeper look into thoughts",
 };
 
 export default function RootLayout({
@@ -34,7 +41,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${amiri.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${amiri.variable} ${cormorantGaramond.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <QueryProvider>

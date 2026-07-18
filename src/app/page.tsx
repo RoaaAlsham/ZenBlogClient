@@ -54,7 +54,7 @@ function BlogCard({ blog }: { blog: GetBlogsQueryResult }) {
             </Link>
           ) : null}
         </div>
-        <h2 className="text-lg font-semibold tracking-tight text-zinc-900">
+        <h2 className="font-title text-lg font-semibold tracking-tight text-zinc-900">
           <Link href={`/blogs/${blog.id}`} className="hover:underline">
             {blog.title}
           </Link>
@@ -208,12 +208,12 @@ export default function HomePage() {
       <header className="border-b border-zinc-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <div>
-            <p className="text-xs font-medium tracking-[0.2em] text-zinc-500 uppercase">
-              ZenBlog
-            </p>
-            <h1 className="text-xl font-semibold tracking-tight text-zinc-900">
-              Discover stories
+            <h1 className="font-title text-xl font-bold tracking-tight text-zinc-900">
+              Visions by Roaa
             </h1>
+            <p className="font-title mt-0.5 text-sm text-zinc-500">
+              A deeper look into thoughts
+            </p>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -311,7 +311,7 @@ export default function HomePage() {
         <section>
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-2xl font-semibold tracking-tight text-zinc-900">
+              <h2 className="font-title text-2xl font-semibold tracking-tight text-zinc-900">
                 {selectedCategoryName}
               </h2>
               <p className="mt-1 text-sm text-zinc-600">{resultCountLabel}</p>

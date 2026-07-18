@@ -96,7 +96,7 @@ function RegisterForm() {
       });
 
       await login(email, password);
-      toastSuccess("Welcome to ZenBlog — your account is ready.", "Account created");
+      toastSuccess("Welcome to Visions by Roaa — your account is ready.", "Account created");
       router.replace(nextPath);
     } catch (error) {
       const messages = getLoginErrorMessages(error);
@@ -115,7 +115,7 @@ function RegisterForm() {
     return (
       <main className="flex min-h-full flex-1 items-center justify-center bg-zinc-50 px-4 py-16">
         <div className="w-full max-w-md rounded-2xl border border-red-200 bg-white p-8 text-center shadow-sm">
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+          <h1 className="font-title text-2xl font-semibold tracking-tight text-zinc-900">
             Couldn’t load registration status
           </h1>
           <p className="mt-2 text-sm text-zinc-600">
@@ -145,12 +145,12 @@ function RegisterForm() {
     return (
       <main className="flex min-h-full flex-1 items-center justify-center bg-zinc-50 px-4 py-16">
         <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm font-medium tracking-[0.2em] text-zinc-500 uppercase">
-            ZenBlog
-          </p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900">
-            Registration is closed
+          <h1 className="font-title text-3xl font-bold tracking-tight text-zinc-900">
+            Visions by Roaa
           </h1>
+          <p className="mt-2 text-xl font-semibold tracking-tight text-zinc-900">
+            Registration is closed
+          </p>
           <p className="mt-2 text-sm leading-6 text-zinc-600">
             New accounts are not being accepted right now. If you already have
             an account, you can still sign in.
@@ -170,14 +170,14 @@ function RegisterForm() {
     <main className="flex min-h-full flex-1 items-center justify-center bg-zinc-50 px-4 py-16">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <p className="text-sm font-medium tracking-[0.2em] text-zinc-500 uppercase">
-            ZenBlog
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900">
-            Create account
+          <h1 className="font-title text-3xl font-bold tracking-tight text-zinc-900">
+            Visions by Roaa
           </h1>
+          <p className="mt-2 text-xl font-semibold tracking-tight text-zinc-900">
+            Create account
+          </p>
           <p className="mt-2 text-sm text-zinc-600">
-            Join ZenBlog to publish and comment.
+            Join Visions by Roaa to publish and comment.
           </p>
         </div>
 

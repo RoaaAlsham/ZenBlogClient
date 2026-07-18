@@ -194,7 +194,7 @@ function EditBlogForm() {
           >
             ← Back to blog
           </Link>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900">
+          <h1 className="mt-3 font-title text-3xl font-semibold tracking-tight text-zinc-900">
             Edit Blog
           </h1>
           <p className="mt-2 text-sm text-zinc-600">

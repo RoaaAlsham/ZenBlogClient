@@ -34,7 +34,7 @@ function AuthorPostCard({ blog }: { blog: GetBlogsQueryResult }) {
           <span className="inline-flex rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600">
             {blog.category?.categoryName ?? "Uncategorized"}
           </span>
-          <h3 className="mt-2 truncate text-lg font-semibold tracking-tight text-zinc-900">
+          <h3 className="font-title mt-2 truncate text-lg font-semibold tracking-tight text-zinc-900">
             <Link href={`/blogs/${blog.id}`} className="hover:underline">
               {blog.title}
             </Link>
@@ -148,7 +148,7 @@ export default function AuthorPage({
               )}
             </div>
             <div className="min-w-0 text-center sm:text-left">
-              <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
+              <h1 className="font-title text-3xl font-semibold tracking-tight text-zinc-900">
                 {displayName}
               </h1>
               <p className="mt-1 text-sm text-zinc-600">@{author.username}</p>

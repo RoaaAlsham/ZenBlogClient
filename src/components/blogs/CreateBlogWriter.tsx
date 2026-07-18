@@ -162,9 +162,9 @@ export function CreateBlogWriter({
         <div className="flex min-w-0 items-baseline gap-3">
           <Link
             href="/"
-            className="font-serif text-xl font-bold tracking-tight text-zinc-900"
+            className="font-title text-xl font-bold tracking-tight text-zinc-900"
           >
-            ZenBlog
+            Visions by Roaa
           </Link>
           <span className="truncate text-sm text-zinc-400">Draft</span>
         </div>
@@ -186,7 +186,7 @@ export function CreateBlogWriter({
           dir="auto"
           placeholder="Title"
           aria-invalid={Boolean(titleError)}
-          className="font-writer w-full border-0 bg-transparent text-4xl font-bold leading-tight text-zinc-900 outline-none placeholder:text-zinc-300"
+          className="font-title w-full border-0 bg-transparent text-4xl font-bold leading-tight text-zinc-900 outline-none placeholder:text-zinc-300"
         />
         {titleError ? (
           <p className="mt-2 text-sm text-red-600">{titleError}</p>

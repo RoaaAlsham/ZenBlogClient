@@ -9,7 +9,7 @@ export default function DashboardPage() {
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-12">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+          <h1 className="font-title text-2xl font-semibold tracking-tight text-zinc-900">
             Dashboard
           </h1>
           <p className="mt-1 text-sm text-zinc-600">
